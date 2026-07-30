@@ -96,11 +96,11 @@ h1, h2, h3, h4 {
 /* Cinematic navy overlay for full-bleed photography */
 .photo-wash {
   background:
-    linear-gradient(180deg, rgba(10, 13, 27, 0.55) 0%, rgba(10, 13, 27, 0.78) 55%, rgba(10, 13, 27, 0.94) 100%);
+    linear-gradient(180deg, rgba(10, 13, 27, 0.28) 0%, rgba(10, 13, 27, 0.46) 55%, rgba(10, 13, 27, 0.64) 100%);
 }
 .photo-wash-side {
   background:
-    linear-gradient(90deg, rgba(10, 13, 27, 0.94) 0%, rgba(10, 13, 27, 0.72) 45%, rgba(10, 13, 27, 0.35) 100%);
+    linear-gradient(90deg, rgba(10, 13, 27, 0.64) 0%, rgba(10, 13, 27, 0.30) 45%, rgba(10, 13, 27, 0) 100%);
 }
 
 /* Anchor offset so sections land below the fixed header */

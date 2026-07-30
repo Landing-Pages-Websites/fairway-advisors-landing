@@ -28,7 +28,14 @@ export function Hero(): React.ReactElement {
 
       <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-5 md:px-8 lg:grid-cols-12 lg:gap-14">
         {/* Copy */}
-        <div className="lg:col-span-7">
+        <div className="relative lg:col-span-7">
+          {/* Localized text scrim — mobile/tablet only (desktop uses .photo-wash-side).
+              Keeps cream heading + muted supporting copy legible over the now-lighter
+              photo wash, fading to transparent so the golf course still shows through. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-x-5 -top-28 bottom-0 -z-[1] bg-[linear-gradient(180deg,rgba(10,13,27,0.62)_0%,rgba(10,13,27,0.55)_62%,rgba(10,13,27,0.28)_88%,rgba(10,13,27,0)_100%)] lg:hidden"
+          />
           <Reveal className="space-y-6">
             <p className="eyebrow">{HERO.eyebrow}</p>
 
