@@ -1,37 +1,38 @@
 import type { Metadata } from "next";
-import { Sora, Inter } from "next/font/google";
+import { Playfair_Display, Raleway } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-const display = Sora({
+const display = Playfair_Display({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
   variable: "--font-display-active",
   display: "swap",
 });
 
-const body = Inter({
+const body = Raleway({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-body-active",
   display: "swap",
 });
 
-// === MEGA TAG CONFIG === (real QBC values — QBC opted out of Meta, so NO pixelId)
-const SITE_KEY = "5rn5f8eze80jvipf";
-const SITE_ID = "a6d7ae94-3574-4c2a-9642-4385d223e4e7";
-const GTM_ID = "GTM-5PN93D";
+// === MEGA TAG CONFIG === (real Fairway Advisors values — Meta is OFF, so NO pixelId)
+const SITE_KEY = "d4xupx8w9e0lki33";
+const SITE_ID = "005ce0e3-8326-4670-933e-bfcf8a7ddd65";
+const GTM_ID = "GTM-KRNF4P5";
 
 export const metadata: Metadata = {
-  title:
-    "TireServ ERP — Free Demo for Tire & Automotive Wholesale Distributors | QBC Systems",
+  metadataBase: new URL("https://fairwayadvisors.com"),
+  title: "The Business of Golf® | Fairway Advisors — Sell Your Golf Course",
   description:
-    "TireServ is the ERP built exclusively for tire & automotive wholesale distributors. POS, inventory, purchasing, AR, AP, GL, and reporting in one cloud system with real-time wholesale integration. Purpose-built over 48 years. Get a free demo.",
+    "Fairway Advisors is a golf course brokerage and advisory firm with over $1 billion sold and advised. Find out what your course is worth — a free, confidential evaluation for courses with 18+ holes and $1M+ gross revenue.",
   openGraph: {
-    title: "TireServ ERP — Built Exclusively for Tire Wholesale Distributors",
+    title: "The Business of Golf® | Fairway Advisors",
     description:
-      "One cloud system for POS, inventory, purchasing, and accounting — with real-time wholesale integration and mobile order entry. Purpose-built over 48 years by QBC Systems.",
-    images: ["/images/hero-warehouse.jpg"],
+      "Over $1 billion sold and advised. An unrivaled track record from California to New York. Find out what your golf course is worth — free and confidential.",
+    images: ["/images/hero-wide.jpg"],
     type: "website",
   },
   icons: {
@@ -45,7 +46,7 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-}) {
+}): React.ReactElement {
   const megaTagConfig = `window.MEGA_TAG_CONFIG={siteKey:"${SITE_KEY}",siteId:"${SITE_ID}",gtmId:"${GTM_ID}"};window.API_ENDPOINT="https://optimizer.gomega.ai";window.TRACKING_API_ENDPOINT="https://events-api.gomega.ai";`;
 
   return (
@@ -65,11 +66,8 @@ export default function RootLayout({
       </head>
       <body className="bg-[var(--color-bg)] text-[var(--color-text)] antialiased">
         {children}
-        {/* CallTrackingMetrics — universal Mega account (never remove) */}
-        <Script
-          src="https://572388.tctm.co/t.js"
-          strategy="afterInteractive"
-        />
+        {/* CallTrackingMetrics — shared Mega account (never remove) */}
+        <Script src="https://572388.tctm.co/t.js" strategy="afterInteractive" />
       </body>
     </html>
   );

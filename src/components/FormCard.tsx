@@ -5,9 +5,9 @@ import { useMegaLeadForm } from "@/hooks/useMegaLeadForm";
 import {
   CTA,
   PHONE,
-  TIRE_BRANDS,
-  REVENUE_OPTIONS,
-  EMPLOYEE_OPTIONS,
+  COURSE_TYPE_OPTIONS,
+  GROSS_REVENUE_OPTIONS,
+  DISQUALIFYING,
 } from "@/lib/content";
 import { Icon } from "@/components/icons";
 
@@ -20,7 +20,7 @@ declare global {
   }
 }
 
-// ─── Validation (HARD RULE #8 — inline per-field, no native tooltips) ───
+// ─── Validation (HARD RULE — inline per-field, no native tooltips) ───
 
 // RFC-5322-lite — the lead API server-validates the rest.
 const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
@@ -28,26 +28,21 @@ const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 // NANP: area code & exchange each start 2-9 and may not be an N11.
 const NANP_RE = /^[2-9](?!11)\d{2}[2-9](?!11)\d{2}\d{4}$/;
 
-// Only these fields block submission. companyWebsite + primaryTireBrand are
-// optional. annualRevenue "Under $2M" and employeeCount "Under 5" are
-// REPORTING-ONLY answers — required to be chosen, but never disqualifying.
 type FieldKey =
   | "firstName"
   | "lastName"
   | "email"
   | "phone"
-  | "annualRevenue"
-  | "employeeCount";
+  | "courseType"
+  | "grossRevenue";
 
 interface FormState {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  companyWebsite: string;
-  primaryTireBrand: string;
-  annualRevenue: string;
-  employeeCount: string;
+  courseType: string;
+  grossRevenue: string;
 }
 
 const INITIAL: FormState = {
@@ -55,10 +50,8 @@ const INITIAL: FormState = {
   lastName: "",
   email: "",
   phone: "",
-  companyWebsite: "",
-  primaryTireBrand: "",
-  annualRevenue: "",
-  employeeCount: "",
+  courseType: "",
+  grossRevenue: "",
 };
 
 type FieldErrors = Partial<Record<FieldKey, string>>;
@@ -68,8 +61,8 @@ const REQUIRED_ORDER: FieldKey[] = [
   "lastName",
   "email",
   "phone",
-  "annualRevenue",
-  "employeeCount",
+  "courseType",
+  "grossRevenue",
 ];
 
 function validateField(key: FieldKey, value: string): string | undefined {
@@ -91,10 +84,10 @@ function validateField(key: FieldKey, value: string): string | undefined {
       if (!NANP_RE.test(digits)) return "Please enter a valid US phone number.";
       return undefined;
     }
-    case "annualRevenue":
-      return value ? undefined : "Please select your annual revenue.";
-    case "employeeCount":
-      return value ? undefined : "Please select your team size.";
+    case "courseType":
+      return value ? undefined : "Please select your course type.";
+    case "grossRevenue":
+      return value ? undefined : "Please select your annual gross revenue.";
   }
 }
 
@@ -126,14 +119,14 @@ interface FormCardProps {
 }
 
 export function FormCard({
-  idPrefix = "hero",
-  eyebrow = "Request your free demo",
-  heading = "See TireServ mapped to your operation",
-  subheading = "No cost, no commitment — every request gets a response within one business day.",
-  submitLabel = CTA.primary,
+  idPrefix = "lead",
+  eyebrow = "Free confidential evaluation",
+  heading = "Find out what your course is worth",
+  subheading = "No obligation. Completely confidential. For courses with 18+ holes and $1M+ gross revenue.",
+  submitLabel = "Get my free evaluation",
   routeSlug,
-  thankYouBody = "Thanks — your demo request is in. A member of the QBC Systems team will reach out within one business day to schedule a walkthrough built around your operation.",
-}: FormCardProps) {
+  thankYouBody = "Thank you — your request is confidential and in good hands. A Fairway Advisors principal will reach out personally to begin your evaluation.",
+}: FormCardProps): React.ReactElement {
   const { submit } = useMegaLeadForm();
 
   const [data, setData] = useState<FormState>(INITIAL);
@@ -142,12 +135,11 @@ export function FormCard({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Synchronous re-entrancy guard — blocks duplicate fires from rapid clicks
-  // before React re-renders with the disabled state.
+  // Synchronous re-entrancy guard — blocks duplicate fires from rapid clicks.
   const inFlightRef = useRef(false);
   const fieldRefs = useRef<Partial<Record<FieldKey, HTMLElement | null>>>({});
 
-  const update = (k: keyof FormState, v: string) => {
+  const update = (k: keyof FormState, v: string): void => {
     setData((d) => ({ ...d, [k]: v }));
     setErrors((prev) => {
       if (!(k in prev)) return prev;
@@ -161,7 +153,7 @@ export function FormCard({
     });
   };
 
-  const markTouched = (k: FieldKey, currentValue: string) => {
+  const markTouched = (k: FieldKey, currentValue: string): void => {
     setTouched((t) => ({ ...t, [k]: true }));
     const err = validateField(k, currentValue);
     setErrors((prev) => {
@@ -172,19 +164,24 @@ export function FormCard({
     });
   };
 
-  const fireTracking = () => {
+  const fireTracking = (qualified: boolean): void => {
     if (typeof window === "undefined") return;
     const route =
       routeSlug || (typeof window !== "undefined" ? window.location.pathname : "/");
     // Mega optimizer event FIRST, then the GTM dataLayer signal.
-    window.MegaTag?.trackEvent?.("form_submit", { form_route: route });
+    window.MegaTag?.trackEvent?.("form_submit", { form_route: route, qualified });
     window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ event: "form_submit", form_route: route });
+    window.dataLayer.push({ event: "form_submit", form_route: route, qualified });
+    // Gated qualified-lead optimization event — only for 18+ holes AND $1M+.
+    if (qualified) {
+      window.MegaTag?.trackEvent?.("qualified_lead", { form_route: route });
+      window.dataLayer.push({ event: "qualified_lead", form_route: route });
+    }
   };
 
   // Validate FIRST, then submit. Button is type="button" so the optimizer's
   // capture-phase listener never fires on empty/invalid clicks.
-  const handleValidateAndSubmit = async () => {
+  const handleValidateAndSubmit = async (): Promise<void> => {
     if (inFlightRef.current || submitting || submitted) return;
     const allErrors = validateAll(data);
     if (Object.keys(allErrors).length > 0) {
@@ -194,8 +191,8 @@ export function FormCard({
         lastName: true,
         email: true,
         phone: true,
-        annualRevenue: true,
-        employeeCount: true,
+        courseType: true,
+        grossRevenue: true,
       });
       const firstBad = REQUIRED_ORDER.find((k) => allErrors[k]);
       if (firstBad) {
@@ -210,68 +207,68 @@ export function FormCard({
     }
     inFlightRef.current = true;
     setSubmitting(true);
-    // Reporting qualification (does NOT block submit — every lead is delivered).
-    const revenueDQ = data.annualRevenue === "Under $2M";
-    const employeesDQ = data.employeeCount === "Under 5";
-    const qualified = !(revenueDQ || employeesDQ);
-    const disqualification_reason = revenueDQ && employeesDQ
-      ? "revenue_and_headcount_below_threshold"
-      : revenueDQ
-        ? "revenue_under_2m"
-        : employeesDQ
-          ? "employees_under_5"
-          : null;
+    // Qualification gate — 9-hole OR Under $1M disqualifies the optimization
+    // event, but ALL leads still submit to CRM + email.
+    const courseDQ = data.courseType === DISQUALIFYING.courseType;
+    const revenueDQ = data.grossRevenue === DISQUALIFYING.grossRevenue;
+    const qualified = !(courseDQ || revenueDQ);
+    const disqualification_reason =
+      courseDQ && revenueDQ
+        ? "nine_hole_and_revenue_under_1m"
+        : courseDQ
+          ? "nine_hole"
+          : revenueDQ
+            ? "revenue_under_1m"
+            : null;
     try {
       await submit({
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),
         email: data.email.trim(),
         phone: data.phone.replace(/\D/g, ""),
-        companyWebsite: data.companyWebsite.trim(),
-        primaryTireBrand: data.primaryTireBrand,
-        annualRevenue: data.annualRevenue,
-        employeeCount: data.employeeCount,
+        courseType: data.courseType,
+        grossRevenue: data.grossRevenue,
         qualified,
         disqualification_reason,
         route_slug:
           routeSlug ||
           (typeof window !== "undefined" ? window.location.pathname : "/"),
       });
-      fireTracking();
+      fireTracking(qualified);
       setSubmitted(true);
     } catch (err) {
       console.error("Form submission error:", err);
       // Still fire tracking + show thank-you so the user isn't stranded.
-      fireTracking();
+      fireTracking(qualified);
       setSubmitted(true);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleNativeSubmit = (e: React.FormEvent) => {
+  const handleNativeSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
   };
 
   const cardBase =
-    "bg-white border border-[var(--color-border)] shadow-card-lg";
+    "bg-[var(--color-surface)] border border-[var(--color-border)] shadow-card-lg";
 
   if (submitted) {
     return (
       <div className={`${cardBase} rounded-2xl p-8 md:p-10`}>
-        <div className="flex flex-col items-center text-center gap-4">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[var(--color-primary)]/10">
-            <Icon name="check" className="w-7 h-7 text-[var(--color-primary)]" strokeWidth={2.4} />
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-accent)]/15">
+            <Icon name="check" className="h-7 w-7 text-[var(--color-accent)]" strokeWidth={2.4} />
           </div>
-          <h3 className="font-display text-2xl md:text-3xl text-[var(--color-text)]">
-            Demo request received.
+          <h3 className="font-display text-2xl text-[var(--color-text)] md:text-3xl">
+            Request received.
           </h3>
-          <p className="text-[var(--color-muted)] text-base leading-relaxed">
+          <p className="text-base leading-relaxed text-[var(--color-muted)]">
             {thankYouBody}
           </p>
-          <p className="text-[var(--color-muted)] text-sm">
+          <p className="text-sm text-[var(--color-muted)]">
             Prefer to talk now? Call{" "}
-            <span className="font-semibold text-[var(--color-text)] whitespace-nowrap">
+            <span className="whitespace-nowrap font-semibold text-[var(--color-text)]">
               {PHONE}
             </span>
             .
@@ -281,25 +278,26 @@ export function FormCard({
     );
   }
 
-  const showErr = (k: FieldKey) => Boolean(touched[k] && errors[k]);
-  const errId = (k: FieldKey) => `${idPrefix}-${k}-error`;
+  const showErr = (k: FieldKey): boolean => Boolean(touched[k] && errors[k]);
+  const errId = (k: FieldKey): string => `${idPrefix}-${k}-error`;
   const fieldCls =
-    "w-full rounded-lg px-3.5 py-2.5 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] placeholder:text-[var(--color-muted-soft)] transition-colors focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-accent)]/40";
-  const inputCls = (k: FieldKey) => `${fieldCls} ${showErr(k) ? "lp-input-error" : ""}`;
+    "w-full rounded-lg px-3.5 py-3 text-sm bg-[var(--color-primary)] border border-[var(--color-border-strong)] text-[var(--color-text)] placeholder:text-[var(--color-muted)] transition-colors focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/35";
+  const inputCls = (k: FieldKey): string =>
+    `${fieldCls} ${showErr(k) ? "lp-input-error" : ""}`;
 
   return (
     <form
       onSubmit={handleNativeSubmit}
       noValidate
-      aria-label="Request a free TireServ demo"
-      className={`${cardBase} rounded-2xl p-6 md:p-7 space-y-3.5`}
+      aria-label="Request a free, confidential golf course evaluation"
+      className={`${cardBase} space-y-3.5 rounded-2xl p-6 md:p-7`}
     >
-      <div className="space-y-1 mb-1">
+      <div className="mb-1 space-y-1.5">
         <p className="eyebrow">{eyebrow}</p>
-        <h3 className="font-display text-xl md:text-[1.6rem] leading-tight text-[var(--color-text)]">
+        <h3 className="font-display text-2xl leading-tight text-[var(--color-text)] md:text-[1.9rem]">
           {heading}
         </h3>
-        <p className="text-sm text-[var(--color-muted)] leading-snug">{subheading}</p>
+        <p className="text-sm leading-snug text-[var(--color-muted)]">{subheading}</p>
       </div>
 
       {/* First / Last */}
@@ -356,7 +354,7 @@ export function FormCard({
 
       {/* Email */}
       <div>
-        <label htmlFor={`${idPrefix}-email`} className="sr-only">Work email</label>
+        <label htmlFor={`${idPrefix}-email`} className="sr-only">Email</label>
         <input
           ref={(el) => { fieldRefs.current.email = el; }}
           id={`${idPrefix}-email`}
@@ -365,7 +363,7 @@ export function FormCard({
           required
           pattern="[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}"
           autoComplete="email"
-          placeholder="Work email"
+          placeholder="Email address"
           value={data.email}
           onChange={(e) => update("email", e.target.value)}
           onBlur={(e) => markTouched("email", e.target.value)}
@@ -408,142 +406,99 @@ export function FormCard({
         )}
       </div>
 
-      {/* Company website (optional) */}
+      {/* Course type (qualifying select) */}
       <div>
-        <label htmlFor={`${idPrefix}-companyWebsite`} className="sr-only">
-          Company website (optional)
+        <label htmlFor={`${idPrefix}-courseType`} className="sr-only">
+          What type of golf course are you looking to sell?
         </label>
-        <input
-          id={`${idPrefix}-companyWebsite`}
-          name="companyWebsite"
-          type="text"
-          autoComplete="url"
-          placeholder="Company website (optional)"
-          value={data.companyWebsite}
-          onChange={(e) => update("companyWebsite", e.target.value)}
-          className={fieldCls}
-          disabled={submitting}
-        />
+        <div className="relative">
+          <select
+            ref={(el) => { fieldRefs.current.courseType = el; }}
+            id={`${idPrefix}-courseType`}
+            name="courseType"
+            required
+            value={data.courseType}
+            onChange={(e) => {
+              update("courseType", e.target.value);
+              markTouched("courseType", e.target.value);
+            }}
+            onBlur={(e) => markTouched("courseType", e.target.value)}
+            className={`${inputCls("courseType")} appearance-none pr-9 ${data.courseType ? "" : "text-[var(--color-muted)]"}`}
+            aria-invalid={showErr("courseType") || undefined}
+            aria-describedby={showErr("courseType") ? errId("courseType") : undefined}
+            disabled={submitting}
+          >
+            <option value="">What type of course are you selling?</option>
+            {COURSE_TYPE_OPTIONS.map((o) => (
+              <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
+            ))}
+          </select>
+          <ChevronDown />
+        </div>
+        {showErr("courseType") && (
+          <p id={errId("courseType")} role="alert" aria-live="polite" className="lp-field-error">
+            {errors.courseType}
+          </p>
+        )}
       </div>
 
-      {/* Primary tire brand (optional) */}
-      <div className="relative">
-        <label htmlFor={`${idPrefix}-primaryTireBrand`} className="sr-only">
-          Primary tire brand (optional)
+      {/* Gross revenue (qualifying select) */}
+      <div>
+        <label htmlFor={`${idPrefix}-grossRevenue`} className="sr-only">
+          What is your annual gross revenue?
         </label>
-        <select
-          id={`${idPrefix}-primaryTireBrand`}
-          name="primaryTireBrand"
-          value={data.primaryTireBrand}
-          onChange={(e) => update("primaryTireBrand", e.target.value)}
-          className={`${fieldCls} appearance-none pr-9 ${data.primaryTireBrand ? "" : "text-[var(--color-muted-soft)]"}`}
-          disabled={submitting}
-        >
-          <option value="">Primary tire brand (optional)</option>
-          {TIRE_BRANDS.map((b) => (
-            <option key={b} value={b} className="text-[var(--color-text)]">
-              {b}
-            </option>
-          ))}
-        </select>
-        <ChevronDown />
-      </div>
-
-      {/* Qualifier note */}
-      <p className="text-xs text-[var(--color-muted)] leading-snug pt-0.5">
-        Two quick questions help us tailor the demo — every request gets a response
-        regardless of your answers.
-      </p>
-
-      {/* Annual revenue / Employee count */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor={`${idPrefix}-annualRevenue`} className="sr-only">Annual revenue</label>
-          <div className="relative">
-            <select
-              ref={(el) => { fieldRefs.current.annualRevenue = el; }}
-              id={`${idPrefix}-annualRevenue`}
-              name="annualRevenue"
-              required
-              value={data.annualRevenue}
-              onChange={(e) => {
-                update("annualRevenue", e.target.value);
-                markTouched("annualRevenue", e.target.value);
-              }}
-              onBlur={(e) => markTouched("annualRevenue", e.target.value)}
-              className={`${inputCls("annualRevenue")} appearance-none pr-9 ${data.annualRevenue ? "" : "text-[var(--color-muted-soft)]"}`}
-              aria-invalid={showErr("annualRevenue") || undefined}
-              aria-describedby={showErr("annualRevenue") ? errId("annualRevenue") : undefined}
-              disabled={submitting}
-            >
-              <option value="">Annual revenue</option>
-              {REVENUE_OPTIONS.map((o) => (
-                <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
-              ))}
-            </select>
-            <ChevronDown />
-          </div>
-          {showErr("annualRevenue") && (
-            <p id={errId("annualRevenue")} role="alert" aria-live="polite" className="lp-field-error">
-              {errors.annualRevenue}
-            </p>
-          )}
+        <div className="relative">
+          <select
+            ref={(el) => { fieldRefs.current.grossRevenue = el; }}
+            id={`${idPrefix}-grossRevenue`}
+            name="grossRevenue"
+            required
+            value={data.grossRevenue}
+            onChange={(e) => {
+              update("grossRevenue", e.target.value);
+              markTouched("grossRevenue", e.target.value);
+            }}
+            onBlur={(e) => markTouched("grossRevenue", e.target.value)}
+            className={`${inputCls("grossRevenue")} appearance-none pr-9 ${data.grossRevenue ? "" : "text-[var(--color-muted)]"}`}
+            aria-invalid={showErr("grossRevenue") || undefined}
+            aria-describedby={showErr("grossRevenue") ? errId("grossRevenue") : undefined}
+            disabled={submitting}
+          >
+            <option value="">Annual gross revenue</option>
+            {GROSS_REVENUE_OPTIONS.map((o) => (
+              <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
+            ))}
+          </select>
+          <ChevronDown />
         </div>
-        <div>
-          <label htmlFor={`${idPrefix}-employeeCount`} className="sr-only">Team size</label>
-          <div className="relative">
-            <select
-              ref={(el) => { fieldRefs.current.employeeCount = el; }}
-              id={`${idPrefix}-employeeCount`}
-              name="employeeCount"
-              required
-              value={data.employeeCount}
-              onChange={(e) => {
-                update("employeeCount", e.target.value);
-                markTouched("employeeCount", e.target.value);
-              }}
-              onBlur={(e) => markTouched("employeeCount", e.target.value)}
-              className={`${inputCls("employeeCount")} appearance-none pr-9 ${data.employeeCount ? "" : "text-[var(--color-muted-soft)]"}`}
-              aria-invalid={showErr("employeeCount") || undefined}
-              aria-describedby={showErr("employeeCount") ? errId("employeeCount") : undefined}
-              disabled={submitting}
-            >
-              <option value="">Team size</option>
-              {EMPLOYEE_OPTIONS.map((o) => (
-                <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
-              ))}
-            </select>
-            <ChevronDown />
-          </div>
-          {showErr("employeeCount") && (
-            <p id={errId("employeeCount")} role="alert" aria-live="polite" className="lp-field-error">
-              {errors.employeeCount}
-            </p>
-          )}
-        </div>
+        {showErr("grossRevenue") && (
+          <p id={errId("grossRevenue")} role="alert" aria-live="polite" className="lp-field-error">
+            {errors.grossRevenue}
+          </p>
+        )}
       </div>
 
       <button
         type="button"
         onClick={handleValidateAndSubmit}
         disabled={submitting || submitted}
-        className="mt-1 w-full rounded-lg px-6 py-3.5 font-semibold text-base bg-[var(--color-primary)] text-white shadow-cta transition-all hover:bg-[var(--color-primary-hover)] hover:-translate-y-0.5 active:translate-y-0 active:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 disabled:bg-[var(--color-primary-disabled)] disabled:cursor-not-allowed disabled:translate-y-0 flex items-center justify-center gap-2"
+        className="mt-1 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)] disabled:cursor-not-allowed disabled:bg-[var(--color-disabled)] disabled:translate-y-0"
       >
         {submitting ? "Submitting…" : submitLabel}
-        {!submitting && <Icon name="arrow" className="w-4 h-4" strokeWidth={2.4} />}
+        {!submitting && <Icon name="arrow" className="h-4 w-4" strokeWidth={2.4} />}
       </button>
 
-      <p className="text-xs text-center leading-relaxed text-[var(--color-muted)]">
-        No spam. We&apos;ll only use your details to schedule your demo.
+      <p className="text-center text-xs leading-relaxed text-[var(--color-muted)]">
+        Completely confidential. We&apos;ll only use your details to prepare your evaluation.
       </p>
     </form>
   );
 }
 
-function ChevronDown() {
+function ChevronDown(): React.ReactElement {
   return (
     <svg
-      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted)]"
+      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-accent)]"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

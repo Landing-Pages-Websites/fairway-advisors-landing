@@ -1,218 +1,264 @@
-// Site-wide content + config for QBC Systems — TireServ ERP demo LP.
+// Site-wide content + config for Fairway Advisors — sell-side golf brokerage LP.
 // Single source of truth for copy, phone, form options, and tracking IDs.
+// Messaging guardrails (verbatim, do NOT alter):
+//   • Always "over $1 billion sold AND advised" — never "sold" alone.
+//   • Firm is over 20 years old (founded 2005).
+//   • Principal has over 30 years exclusively in golf.
+//   • "three golf courses sold that hosted a major championship".
+//   • "unrivaled track record from California to New York".
+//   • Trademarks: "The Business of Golf®" and "There's a Major Difference®".
 
-export const PHONE = "(716) 691-5201";
-export const PHONE_HREF = "tel:7166915201";
+export const PHONE = "(312) 593-5434";
+export const PHONE_HREF = "tel:3125935434";
 
 export const CTA = {
-  primary: "Get a Free Demo",
-  secondary: "Call (716) 691-5201",
-  demoAnchor: "#demo",
+  primary: "Find out what your course is worth",
+  secondary: "Call (312) 593-5434",
+  formAnchor: "#lead-form",
 };
 
 export const BRAND = {
-  company: "QBC Systems",
-  product: "TireServ",
-  tagline: "Software with a Personal Touch",
-  yearsInBusiness: 48,
-  address: "25 Hazelwood Dr., Amherst, NY 14228",
-  email: "patrick@qbc.com",
-  emailHref: "mailto:patrick@qbc.com",
+  company: "Fairway Advisors",
+  tagline: "The Business of Golf®",
+  difference: "There's a Major Difference®",
+  yearsInBusiness: "20+",
+  foundedYear: 2005,
+  email: "jeff.davis@fairwayadvisors.com",
+  emailHref: "mailto:jeff.davis@fairwayadvisors.com",
+  principal: "Jeff Davis",
 };
 
 export const CURRENT_YEAR = new Date().getFullYear();
 
+// ─── Hero (sell-side, free-evaluation offer) ───
 export const HERO = {
+  eyebrow: "Golf Course Brokerage & Advisory",
   chips: [
-    `${BRAND.yearsInBusiness} years in tire distribution`,
-    "Purpose-built ERP",
-    "Cloud-based — nothing to install",
+    "Over $1 billion sold & advised",
+    "20+ years",
+    "Confidential & invitation-only",
   ],
-  h1Lead: "The ERP built exclusively for",
-  h1Accent: "tire & automotive wholesale distributors.",
+  h1Lead: "The Business of Golf",
+  h1Trademark: "®",
+  h1Punct: ".",
   subhead:
-    "Outgrown QuickBooks or a patched-together legacy system? TireServ unifies POS, inventory, purchasing, AR, AP, GL, and reporting in one cloud system — purpose-built over 48 years for tire distribution, not a generic ERP bent to fit.",
+    "Find out what your course is worth — a free, confidential evaluation for courses with 18+ holes and $1M+ in gross revenue.",
+  supporting:
+    "Fairway Advisors is a golf course brokerage and advisory firm with over $1 billion sold and advised — an unrivaled track record from California to New York.",
 };
 
-// ─── Pain points (PAS — Problem / Agitate) ───
-export const PAIN_INTRO =
-  "If any of this sounds familiar, you've outgrown your current system.";
-
-export const PAIN_POINTS = [
-  {
-    id: "manual-workarounds",
-    icon: "clipboard",
-    title: "Manual workarounds everywhere",
-    body: "Re-keying orders by hand, spreadsheets bolted onto your accounting software, copy-paste between systems that were never meant to talk. Every workaround is another place errors creep in — and errors cost money.",
-  },
-  {
-    id: "inventory-blind-spots",
-    icon: "boxes",
-    title: "Inventory blind spots",
-    body: "You're never quite sure what's really in stock across your branches. Overselling, dead stock, and frantic phone calls to check availability are just part of the day. The numbers on the screen and the tires on the rack don't match.",
-  },
-  {
-    id: "stale-pricing",
-    icon: "trending",
-    title: "No real-time wholesale pricing",
-    body: "Pricing and availability from your suppliers' wholesale platforms live in a separate window — updated by hand, always a little stale. Missed margin and quoting errors follow when the numbers can't keep up with the market.",
-  },
+// ─── Trust bar (verbatim proof stats — messaging guardrails) ───
+export const PROOF_STATS = [
+  { value: "$1B+", label: "sold & advised" },
+  { value: "20+", label: "years in business" },
+  { value: "30+", label: "years exclusively in golf" },
+  { value: "3", label: "major-championship venues sold" },
 ];
 
-// ─── Capabilities (PAS — Solution) ───
-export const CAPABILITIES_INTRO =
-  "TireServ replaces the patchwork with one system your whole operation runs on — every module built for how tire and automotive distributors actually work.";
-
-// Core ERP modules — the single-system stack.
-export const CORE_MODULES = [
-  { icon: "cart", title: "Point of Sale", body: "Fast, tire-aware counter and phone sales that flow straight into inventory and accounting." },
-  { icon: "boxes", title: "Inventory Management", body: "Real-time stock across every branch, so what's on screen matches what's on the rack." },
-  { icon: "truck", title: "Purchasing", body: "Streamlined purchase orders and receiving tied directly to demand and stock levels." },
-  { icon: "receipt", title: "Accounts Receivable", body: "Track customer balances, terms, and collections without a separate ledger." },
-  { icon: "wallet", title: "Accounts Payable", body: "Manage vendor bills and payments in the same system that runs your sales floor." },
-  { icon: "ledger", title: "General Ledger", body: "A full GL underneath it all — no exporting to a bolt-on accounting package." },
-  { icon: "chart", title: "Reporting", body: "100+ standard reports covering sales, inventory, and financials out of the box." },
-];
-
-// Differentiators — the modern, tire-specific capabilities.
-export const DIFFERENTIATORS = [
-  {
-    icon: "sync",
-    title: "Real-time wholesale integration",
-    body: "TireServ connects directly to major wholesale tire platforms, so live pricing and availability flow into your system automatically — no manual updates, no stale numbers.",
-  },
-  {
-    icon: "mobile",
-    title: "Mobile order entry",
-    body: "Write orders from anywhere — the sales floor, a customer's shop, the road — on a tablet or phone, and watch them land in TireServ instantly.",
-    image: "/images/mobile-order.jpg",
-  },
-  {
-    icon: "send",
-    title: "Telegram-based reporting",
-    body: "Get the numbers you care about pushed straight to your phone through Telegram — daily figures and key reports without logging in.",
-  },
-  {
-    icon: "cloud",
-    title: "Cloud-based, browser-only",
-    body: "TireServ runs entirely in your browser. Nothing to install, nothing to maintain on-site — open it on any device and get to work.",
-  },
-];
-
-// ─── Why purpose-built (differentiation, dark band) ───
+// ─── Why Fairway (PAS — problem / agitate / solution) ───
 export const WHY = {
-  headline: "Purpose-built for tire distribution — not a generic ERP with a tire skin.",
-  body: "For 48 years, we've built software exclusively for tire and automotive wholesale distributors. TireServ speaks your language out of the box — tire brands, wholesale platforms, and the distribution workflows you run every day.",
-  statValue: String(BRAND.yearsInBusiness),
-  statLabel: "years building for tire distribution — and nothing else",
-  comparison: [
+  eyebrow: "There's a Major Difference®",
+  headline: "A generalist broker doesn't understand the business of golf.",
+  problem:
+    "Most owners hand their course to a local or generalist commercial broker who has never structured a golf transaction. Golf is not office space or retail — it is a specialized asset with member dynamics, licensing, seasonality, and buyer pools a generalist has never navigated.",
+  agitate:
+    "Your property's value — and its confidentiality — is only as strong as the broker representing it. The wrong process signals distress to the market, erodes price, and puts your reputation and your members' trust at risk.",
+  solution:
+    "Fairway Advisors does nothing but the business of golf. Through a discreet, invitation-only process we position your course to the right buyers, protect your confidentiality, and command the highest price in the shortest time. That's the major difference.",
+  differentiators: [
     {
-      side: "generic",
-      label: "A generic ERP",
-      points: [
-        "You bend your business to fit the software",
-        "Tire and wholesale workflows bolted on after the fact",
-        "Integrations and customizations you pay to build",
-      ],
+      icon: "target",
+      title: "Specialists, not generalists",
+      body: "We broker golf and only golf — every day, in every market, from private clubs to daily-fee and resort assets.",
     },
     {
-      side: "tireserv",
-      label: "TireServ",
-      points: [
-        "The software was built around your business",
-        "Tire brands and wholesale platforms understood natively",
-        "Real-time wholesale integration and reporting included",
-      ],
+      icon: "shield",
+      title: "Confidential by design",
+      body: "An invitation-only process that protects your operation, your members, and your reputation from start to close.",
+    },
+    {
+      icon: "handshake",
+      title: "The right buyers",
+      body: "Three decades of relationships with the operators, funds, and private buyers who actually acquire golf assets.",
     },
   ],
 };
 
-// ─── Proof points ───
-export const PROOF_STATS = [
-  { value: `${BRAND.yearsInBusiness} Years`, label: "In business" },
-  { value: "Purpose-Built", label: "For tire distribution" },
-  { value: "Cloud-Based", label: "Browser-only, nothing to install" },
-  { value: "Real-Time", label: "Wholesale platform integration" },
-];
+// ─── Track record (named transactions, California to New York) ───
+export const TRACK_RECORD = {
+  eyebrow: "Track Record",
+  headline: "An unrivaled track record — from California to New York.",
+  subhead:
+    "Three of the golf courses we've sold hosted a major championship — a selection of notable transactions across three decades.",
+  // Championship pedigree — three major-championship venues, presented as
+  // named, text-forward cards (no course-specific photography).
+  championship: {
+    title: "Championship pedigree",
+    note: "Three of the courses we've sold hosted a PGA Championship.",
+    venues: [
+      {
+        name: "Engineers Country Club",
+        location: "Roslyn Harbor, New York",
+        note: "Host of the 1919 PGA Championship",
+      },
+      {
+        name: "Blue Hill Country Club",
+        location: "Canton, Massachusetts",
+        note: "Host of the 1956 PGA Championship",
+      },
+      {
+        name: "Kemper Lakes Golf Club",
+        location: "Long Grove, Illinois",
+        note: "Host of the 1989 PGA Championship",
+      },
+    ],
+  },
+  // Photo strip — only courses we hold authentic photography of. Every card
+  // is labeled with its OWN course name; no photo is captioned as another
+  // course. Blue Hill is both a real photo and a major-championship venue.
+  featured: [
+    {
+      name: "Edgewood Country Club",
+      location: "New Jersey",
+      note: null,
+      image: "/images/hero-edgewood.jpg",
+      major: false,
+    },
+    {
+      name: "Oakwood Country Club",
+      location: "Kansas City, Missouri",
+      note: null,
+      image: "/images/hero-oakwood.jpg",
+      major: false,
+    },
+    {
+      name: "Blue Hill Country Club",
+      location: "Canton, Massachusetts",
+      note: "Host of the 1956 PGA Championship",
+      image: "/images/hero-bluehill.jpg",
+      major: true,
+    },
+    {
+      name: "Elmwood Country Club",
+      location: "White Plains, New York",
+      note: null,
+      image: "/images/hero-elmwood.jpg",
+      major: false,
+    },
+  ],
+  others: [
+    { name: "Valencia Country Club", location: "Valencia, California" },
+    { name: "Shackamaxon Country Club", location: "Scotch Plains, New Jersey" },
+  ],
+};
 
-export const PROOF_PARAGRAPH =
-  "QBC Systems is a family- and owner-operated company built on one idea: Software with a Personal Touch. We're full-service — software, hardware, IT, and training — supporting tire and automotive distributors from our home in Amherst, New York. When you call, you reach people who know your business.";
+// ─── Services (sell-side brokerage focus) ───
+export const SERVICES = {
+  eyebrow: "Sell-Side Services",
+  headline: "A systematic disposition, executed white-glove.",
+  subhead:
+    "Every engagement is bespoke — built to achieve the highest price in the shortest time while protecting your confidentiality.",
+  items: [
+    {
+      icon: "flag",
+      title: "Full-Service Brokerage",
+      body: "A systematic disposition engineered for the highest price in the shortest time. We tailor the method to your asset and goals — Private Treaty (Invitation Only), Private Treaty (Open Market), Request for Proposal, Sealed Bid, and Internet Auction.",
+      methods: [
+        "Private Treaty — Invitation Only",
+        "Private Treaty — Open Market",
+        "Request for Proposal (RFP)",
+        "Sealed Bid & Internet Auctions",
+      ],
+    },
+    {
+      icon: "users",
+      title: "Member-Owned Club Recapitalizations",
+      body: "For member-owned clubs, we structure recapitalizations and ownership transitions that stabilize the balance sheet, satisfy the membership, and preserve the club's future — with the discretion these situations demand.",
+    },
+    {
+      icon: "compass",
+      title: "Alternative-Use & Redevelopment",
+      body: "When the highest and best use is no longer golf, we bring deep entitlement and redevelopment expertise to unlock the land's full value for residential, mixed-use, and alternative-use buyers.",
+    },
+  ],
+};
 
-// ─── FAQ ───
+// ─── Buy-side (secondary — Buy-Side ad group) ───
+export const BUY_SIDE = {
+  eyebrow: "Acquisition Advisory",
+  headline: "Looking to acquire?",
+  body: "Fairway Advisors represents select buying entities seeking off-market golf assets. We match opportunities to your investment criteria and manage the transaction through negotiation, due diligence, and closing.",
+  detail:
+    "We work with institutional investors, private-equity groups, and qualified individual buyers pursuing acquisitions in the $1M–$50M+ range.",
+  cta: "Contact us",
+};
+
+// ─── Clients / institutions (logo wall) ───
+export const CLIENTS = {
+  eyebrow: "Trusted By",
+  headline: "Trusted by leading institutions and clubs.",
+  logos: [
+    { src: "/images/logo-bofa.jpg", alt: "Bank of America" },
+    { src: "/images/logo-textron.png", alt: "Textron Financial" },
+    { src: "/images/logo-greenfield.png", alt: "Greenfield Partners" },
+  ],
+  clubs: [
+    "Engineers Country Club",
+    "Kemper Lakes Golf Club",
+    "Blue Hill Country Club",
+    "Valencia Country Club",
+    "Shackamaxon Country Club",
+  ],
+};
+
+// ─── FAQ (real seller questions) ───
 export const FAQ = [
   {
-    q: "What does the free demo include?",
-    a: "A working walkthrough of TireServ mapped to your operation — how POS, inventory, purchasing, and accounting come together in one system, plus the real-time wholesale integration, mobile order entry, and reporting. We'll also scope a quote tailored to your business. No cost, no commitment.",
+    q: "How are golf course sales structured?",
+    a: "There is no single formula. Depending on your asset and goals we run a Private Treaty (invitation only or open market), a Request for Proposal, a Sealed Bid, or an Internet Auction. We recommend the disposition method engineered to achieve the highest price in the shortest time while protecting your confidentiality.",
   },
   {
-    q: "Can you migrate us off QuickBooks or our legacy system?",
-    a: "Yes. Moving distributors off QuickBooks and aging legacy systems is core to what we do. During the demo we'll walk through how your data and workflows come across so you can see the migration path before you decide anything.",
+    q: "Do I need a golf course broker?",
+    a: "Golf is a specialized asset. A generalist commercial broker rarely understands the intricacies of valuing and marketing a course, the buyer pool that actually acquires golf, or the confidentiality a sale demands. Fairway Advisors does nothing but the business of golf — that specialization is the difference between a transaction and the right transaction.",
   },
   {
-    q: "Is it really browser-only and cloud-based — anything to install?",
-    a: "Nothing to install. TireServ runs entirely in your web browser on any device. There are no servers to maintain on-site and no software to update yourself — you simply log in and work.",
+    q: "Is the sale process the same for member-owned clubs?",
+    a: "No. Member-owned clubs require a different approach — often a recapitalization or ownership transition rather than a straight sale. We structure the process to stabilize the club, satisfy the membership, and preserve its future, with the discretion these situations require.",
   },
   {
-    q: "How does the real-time wholesale platform integration work?",
-    a: "TireServ connects directly to major wholesale tire platforms, so pricing and availability flow into your system in real time instead of being re-keyed by hand. Your team quotes and orders against current numbers, not yesterday's.",
-  },
-  {
-    q: "Is TireServ a fit for a smaller distributor?",
-    a: "It's built for small-to-mid-sized tire and automotive wholesale distributors — owner-operators, not Fortune 500 IT departments. The two quick questions on the demo form (revenue and team size) simply help us tailor the walkthrough; every request gets a response regardless of your answers.",
-  },
-  {
-    q: "What does it cost?",
-    a: "Pricing is tailored to your operation rather than a one-size sticker. The free demo includes a scoped quote based on what you actually need, so you get real numbers for your business — with no obligation.",
+    q: "How do you value a golf course?",
+    a: "Value reflects far more than acreage — revenue quality, membership, real estate and entitlement potential, deferred capital, and comparable transactions all factor in. Our free, confidential evaluation gives qualifying owners a clear, defensible picture of what their course is truly worth in today's market.",
   },
 ];
 
 // ─── Final CTA ───
 export const FINAL_CTA = {
-  headline: "See TireServ against your real workflow — free, no commitment.",
-  body: "Request a demo and we'll show you how one purpose-built system replaces the workarounds. Prefer to talk first? Call us. Every request gets a response within one business day.",
+  headline: "There's a Major Difference®.",
+  headlineAccent: "Find out what your course is worth.",
+  body: "Request your free, confidential evaluation — or call to speak with us directly. For courses with 18+ holes and $1M+ in gross revenue.",
 };
 
-// ─── Form select options (wired exactly to the LeadFormField contract) ───
-export const TIRE_BRANDS = [
-  "Michelin / BFGoodrich / Uniroyal",
-  "Bridgestone / Firestone",
-  "Goodyear / Dunlop / Kelly",
-  "Continental / General Tire",
-  "Cooper / Mastercraft",
-  "Hankook",
-  "Yokohama",
-  "Pirelli",
-  "Toyo / Nitto",
-  "Falken / Ohtsu",
-  "Nexen",
-  "Multiple brands (mixed inventory)",
-  "Other",
-];
+// ─── Lead-form select options (wired exactly to the LeadFormField contract) ───
+export const COURSE_TYPE_OPTIONS = ["9-hole", "18-hole", "27-hole or more"];
+export const GROSS_REVENUE_OPTIONS = ["Under $1M", "$1M–$2M", "$2M+"];
 
-export const REVENUE_OPTIONS = [
-  "Under $2M",
-  "$2M–$5M",
-  "$5M–$10M",
-  "$10M–$20M",
-  "$20M–$40M",
-  "$40M+",
-];
+// The two answers that gate the qualified-lead optimization event.
+export const DISQUALIFYING = {
+  courseType: "9-hole",
+  grossRevenue: "Under $1M",
+};
 
-export const EMPLOYEE_OPTIONS = ["Under 5", "5–25", "25+"];
-
-// ─── Mega tracking — real QBC IDs. NO Meta Pixel (customer opted out). ───
+// ─── Mega tracking — real Fairway Advisors IDs. NO Meta Pixel (Meta is OFF). ───
 export const TRACKING = {
-  siteKey: "5rn5f8eze80jvipf",
-  siteId: "a6d7ae94-3574-4c2a-9642-4385d223e4e7",
-  gtmId: "GTM-5PN93D",
+  siteKey: "d4xupx8w9e0lki33",
+  siteId: "005ce0e3-8326-4670-933e-bfcf8a7ddd65",
+  gtmId: "GTM-KRNF4P5",
 };
 
-// Mega submission API expects snake_case keys: customer_id, site_id, source_provider
+// Mega submission API. customerId is DIFFERENT from siteId — setting customerId
+// to siteId causes a 401 and NO lead is captured. Keep them distinct.
 export const FORM = {
-  customerId: "16ee8343-6dad-4978-987d-49a4f59ef473",
-  siteId: "a6d7ae94-3574-4c2a-9642-4385d223e4e7",
-  sourceProvider: "qbc-systems-landing",
-  // snake_case mirrors for documentation + lint visibility:
-  customer_id: "16ee8343-6dad-4978-987d-49a4f59ef473",
-  site_id: "a6d7ae94-3574-4c2a-9642-4385d223e4e7",
+  customerId: "19c42217-23f0-4e91-8e58-82b66a83e5e7",
+  siteId: "005ce0e3-8326-4670-933e-bfcf8a7ddd65",
+  sourceProvider: "fairway-advisors-landing",
 };
