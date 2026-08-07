@@ -77,10 +77,10 @@
       "verified": true
     },
     {
-      "claim": "Phone / CTM routing number (312) 593-5434",
-      "source_url": "task spec: Integration → Tracking / lead-routing ('Phone / CTM display number: (312) 593-5434')",
+      "claim": "Phone number displayed on page: (214) 485-1500 (Fairway Advisors Main Office)",
+      "source_url": "https://www.fairwayadvisors.com/ (site footer: \"Main Office | 214.485.1500\") + client email request 2026-08-05 (Jeff Davis, Managing Director)",
       "verified": true,
-      "note": "Authorized routing number. Legacy 214.485.1500 explicitly NOT used."
+      "note": "Static display number (no CTM tracking number provisioned for this customer). Updated 2026-08-05 per client request, replacing the prior Chicago line with the Main Office line (214) 485-1500."
     }
   ],
   "testimonials": [],
