@@ -25,10 +25,10 @@ export function Header(): React.ReactElement {
           : "bg-transparent border-b border-transparent py-4"
       }`}
     >
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 md:px-8">
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-5 md:gap-6 md:px-8">
         <a
           href="#hero"
-          className="flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="flex min-w-0 max-w-[190px] items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] md:max-w-none"
           aria-label="Fairway Advisors — home"
         >
           <Image
@@ -37,11 +37,11 @@ export function Header(): React.ReactElement {
             width={712}
             height={96}
             priority
-            className="h-6 w-auto object-contain md:h-7"
+            className="h-auto w-full object-contain md:h-7 md:w-auto"
           />
         </a>
 
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex shrink-0 items-center gap-2 md:gap-4">
           <a
             href={PHONE_HREF}
             className="hidden items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[var(--color-text)] transition-colors hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:inline-flex"
