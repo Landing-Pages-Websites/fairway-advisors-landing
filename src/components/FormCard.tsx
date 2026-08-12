@@ -28,6 +28,10 @@ const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 // NANP: area code & exchange each start 2-9 and may not be an N11.
 const NANP_RE = /^[2-9](?!11)\d{2}[2-9](?!11)\d{2}\d{4}$/;
 
+// Submit-level failure copy. Retryable, and points to the phone line as a fallback.
+const SUBMIT_ERROR_MESSAGE =
+  "Something went wrong sending your request. Please try again, or call us at " + PHONE + ".";
+
 type FieldKey =
   | "firstName"
   | "lastName"
@@ -134,6 +138,7 @@ export function FormCard({
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Synchronous re-entrancy guard — blocks duplicate fires from rapid clicks.
   const inFlightRef = useRef(false);
@@ -207,6 +212,7 @@ export function FormCard({
     }
     inFlightRef.current = true;
     setSubmitting(true);
+    setSubmitError(null);
     // Qualification gate — 9-hole OR Under $1M disqualifies the optimization
     // event, but ALL leads still submit to CRM + email.
     const courseDQ = data.courseType === DISQUALIFYING.courseType;
@@ -221,7 +227,7 @@ export function FormCard({
             ? "revenue_under_1m"
             : null;
     try {
-      await submit({
+      const res = await submit({
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),
         email: data.email.trim(),
@@ -234,14 +240,20 @@ export function FormCard({
           routeSlug ||
           (typeof window !== "undefined" ? window.location.pathname : "/"),
       });
+      // A 2xx with a body that isn't {ok:true} is still a dropped lead. Only
+      // confirmed success fires conversions and shows the thank-you card.
+      if (res?.ok !== true) {
+        throw new Error("Submission not confirmed by server.");
+      }
       fireTracking(qualified);
       setSubmitted(true);
     } catch (err) {
       console.error("Form submission error:", err);
-      // Still fire tracking + show thank-you so the user isn't stranded.
-      fireTracking(qualified);
-      setSubmitted(true);
+      // The visitor is fine, but the LEAD would be dropped: surface a retryable
+      // error and fire NO tracking so we never bill a phantom conversion.
+      setSubmitError(SUBMIT_ERROR_MESSAGE);
     } finally {
+      inFlightRef.current = false;
       setSubmitting(false);
     }
   };
@@ -477,6 +489,16 @@ export function FormCard({
           </p>
         )}
       </div>
+
+      {submitError && (
+        <p
+          role="alert"
+          aria-live="polite"
+          className="lp-field-error !mt-0 rounded-lg border border-[var(--color-error)]/35 bg-[#fef3f2] px-3.5 py-2.5"
+        >
+          {submitError}
+        </p>
+      )}
 
       <button
         type="button"
