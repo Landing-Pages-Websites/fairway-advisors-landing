@@ -127,6 +127,19 @@ export default function PrivacyPage(): React.ReactElement {
             services. We may also disclose information when required by law, to comply
             with legal process, or to protect our rights, safety, and property.
           </p>
+          <p>
+            Your mobile information will not be sold or shared with third parties for
+            promotional or marketing purposes. We will not share mobile information
+            with third parties for promotional or marketing purposes. All the above
+            categories exclude text messaging originator opt-in data and consent; this
+            information will not be shared with any third parties. We will not share
+            your opt-in to an SMS campaign with any third party for purposes unrelated
+            to providing you with the services of that campaign. We may share your
+            Personal Data, including your SMS opt-in or consent status, with third
+            parties that help us provide our messaging services, including but not
+            limited to platform providers, phone companies, and any other vendors who
+            assist us in the delivery of text messages.
+          </p>
         </Section>
 
         <Section title="Data Security">
@@ -144,7 +157,50 @@ export default function PrivacyPage(): React.ReactElement {
             unsubscribe instructions in an email or by contacting us directly.
             Depending on your location, you may also have the right to request access
             to, correction of, or deletion of the personal information we hold about
-            you. To make a request, reach us using the details below.
+            you. To make a request, reach us using the details below. Reply STOP to
+            opt out of SMS at any time.
+          </p>
+        </Section>
+
+        <Section title="SMS/Text Messaging">
+          <p>
+            If you affirmatively check the optional SMS consent checkbox on our
+            website form, {BRAND.company} may send you SMS/text messages. These
+            messages may include inquiry responses, evaluation follow-ups, appointment
+            confirmations, scheduling reminders, and service updates. Providing a
+            phone number or submitting the form without checking the SMS box does not
+            constitute consent to receive text messages.
+          </p>
+          <p>
+            Message frequency may vary. Standard Message and Data Rates may apply.
+            Consent is not a condition of purchase. Reply STOP to opt out. Reply HELP
+            for help or contact us at{" "}
+            <a
+              href={BRAND.emailHref}
+              className="font-semibold text-[var(--color-accent)] underline underline-offset-4"
+            >
+              {BRAND.email}
+            </a>
+            .
+          </p>
+          <p>
+            Your mobile information will not be sold or shared with third parties for
+            promotional or marketing purposes. We will not share mobile information
+            with third parties for promotional or marketing purposes.
+          </p>
+          <p>
+            All the above categories exclude text messaging originator opt-in data and
+            consent; this information will not be shared with any third parties. We
+            will not share your opt-in to an SMS campaign with any third party for
+            purposes unrelated to providing you with the services of that campaign. We
+            may share your Personal Data, including your SMS opt-in or consent status,
+            with third parties that help us provide our messaging services, including
+            but not limited to platform providers, phone companies, and any other
+            vendors who assist us in the delivery of text messages.
+          </p>
+          <p>
+            Your phone number is used solely for communicating with you about the
+            services you requested.
           </p>
         </Section>
 
@@ -179,6 +235,14 @@ export default function PrivacyPage(): React.ReactElement {
 
         <footer className="mt-16 border-t border-[var(--color-border)] pt-6 text-xs text-[var(--color-muted)]">
           <p>© {CURRENT_YEAR} {BRAND.company}. All rights reserved.</p>
+          <p className="mt-3">
+            <a
+              href="/terms-and-conditions"
+              className="font-semibold text-[var(--color-accent)] underline underline-offset-4"
+            >
+              Terms &amp; Conditions
+            </a>
+          </p>
         </footer>
       </div>
     </main>
