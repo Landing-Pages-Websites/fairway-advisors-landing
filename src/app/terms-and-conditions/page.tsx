@@ -107,12 +107,12 @@ export default function TermsAndConditionsPage(): React.ReactElement {
         <Section title="Privacy">
           <p>
             Personal information submitted through this website is handled in
-            accordance with our Privacy Policy:{" "}
+            accordance with our{" "}
             <a
-              href="https://info.fairwayadvisors.com/privacy"
+              href="https://info.fairwayadvisors.com/privacy-policy"
               className="font-semibold text-[var(--color-accent)] underline underline-offset-4"
             >
-              https://info.fairwayadvisors.com/privacy
+              Privacy Policy
             </a>
             .
           </p>
@@ -199,10 +199,10 @@ export default function TermsAndConditionsPage(): React.ReactElement {
           </p>
           <p className="mt-3">
             <a
-              href="https://info.fairwayadvisors.com/privacy"
+              href="https://info.fairwayadvisors.com/privacy-policy"
               className="font-semibold text-[var(--color-accent)] underline underline-offset-4"
             >
-              https://info.fairwayadvisors.com/privacy
+              Privacy Policy
             </a>
           </p>
         </footer>
