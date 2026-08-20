@@ -172,7 +172,7 @@ export default function PrivacyPage(): React.ReactElement {
             constitute consent to receive text messages.
           </p>
           <p>
-            Message frequency may vary. Standard Message and Data Rates may apply.
+            Message frequency may vary. Message and data rates may apply.
             Consent is not a condition of purchase. Reply STOP to opt out. Reply HELP
             for help or contact us at{" "}
             <a
