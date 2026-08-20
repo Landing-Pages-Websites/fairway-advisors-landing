@@ -518,20 +518,19 @@ export function FormCard({
             disabled={submitting}
           />
           <span>
-            {SMS_CONSENT_TEXT} Privacy Policy:{" "}
+            {SMS_CONSENT_TEXT}{" "}
             <a
               href={PRIVACY_POLICY_URL}
               className="font-semibold text-[var(--color-accent)] underline"
             >
-              {PRIVACY_POLICY_URL}
+              Privacy Policy
             </a>
             {" | "}
-            Terms:{" "}
             <a
               href={TERMS_URL}
               className="font-semibold text-[var(--color-accent)] underline"
             >
-              {TERMS_URL}
+              Terms &amp; Conditions
             </a>
           </span>
         </label>
