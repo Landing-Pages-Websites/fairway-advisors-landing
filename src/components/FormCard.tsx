@@ -2,6 +2,13 @@
 
 import { useRef, useState } from "react";
 import { useMegaLeadForm } from "@/hooks/useMegaLeadForm";
+import {
+  CTA,
+  PHONE,
+  COURSE_TYPE_OPTIONS,
+  GROSS_REVENUE_OPTIONS,
+  DISQUALIFYING,
+} from "@/lib/content";
 import { Icon } from "@/components/icons";
 
 declare global {
@@ -13,17 +20,25 @@ declare global {
   }
 }
 
-const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
-const NANP_RE = /^[2-9](?!11)\d{2}[2-9](?!11)\d{2}\d{4}$/;
-const PHONE = "(214) 485-1500";
+// ─── Validation (HARD RULE — inline per-field, no native tooltips) ───
 
+// RFC-5322-lite — the lead API server-validates the rest.
+const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
+
+// NANP: area code & exchange each start 2-9 and may not be an N11.
+const NANP_RE = /^[2-9](?!11)\d{2}[2-9](?!11)\d{2}\d{4}$/;
+
+// Submit-level failure copy. Retryable, and points to the phone line as a fallback.
 const SUBMIT_ERROR_MESSAGE =
   "Something went wrong sending your request. Please try again, or call us at " + PHONE + ".";
 
-const COURSE_TYPE_OPTIONS = ["9-hole", "18-hole", "27-hole or more"] as const;
-const GROSS_REVENUE_OPTIONS = ["Under $1M", "$1M-$2M", "$2M+"] as const;
-
-type FieldKey = "firstName" | "lastName" | "email" | "phone" | "courseType" | "grossRevenue";
+type FieldKey =
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "phone"
+  | "courseType"
+  | "grossRevenue";
 
 interface FormState {
   firstName: string;
@@ -45,7 +60,7 @@ const INITIAL: FormState = {
   smsConsent: false,
 };
 
-const PRIVACY_POLICY_URL = "https://info.fairwayadvisors.com/privacy";
+const PRIVACY_POLICY_URL = "https://info.fairwayadvisors.com/privacy-policy";
 const TERMS_URL = "https://info.fairwayadvisors.com/terms-and-conditions";
 
 const SMS_CONSENT_TEXT =
@@ -116,14 +131,14 @@ interface FormCardProps {
 }
 
 export function FormCard({
-  idPrefix = "hero",
+  idPrefix = "lead",
   eyebrow = "Free confidential evaluation",
   heading = "Find out what your course is worth",
   subheading = "No obligation. Completely confidential. For courses with 18+ holes and $1M+ gross revenue.",
   submitLabel = "Get my free evaluation",
   routeSlug,
   thankYouBody = "Thank you — your request is confidential and in good hands. A Fairway Advisors principal will reach out personally to begin your evaluation.",
-}: FormCardProps): React.JSX.Element {
+}: FormCardProps): React.ReactElement {
   const { submit } = useMegaLeadForm();
 
   const [data, setData] = useState<FormState>(INITIAL);
@@ -133,22 +148,25 @@ export function FormCard({
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Synchronous re-entrancy guard — blocks duplicate fires from rapid clicks.
   const inFlightRef = useRef(false);
   const fieldRefs = useRef<Partial<Record<FieldKey, HTMLElement | null>>>({});
 
-  const update = (k: FieldKey, v: string) => {
+  const update = (k: FieldKey, v: string): void => {
     setData((d) => ({ ...d, [k]: v }));
     setErrors((prev) => {
-      if (!prev[k]) return prev;
-      const err = validateField(k, v);
+      if (!(k in prev)) return prev;
+      const key = k as FieldKey;
+      if (!prev[key]) return prev;
+      const err = validateField(key, v);
       if (err) return prev;
       const next = { ...prev };
-      delete next[k];
+      delete next[key];
       return next;
     });
   };
 
-  const markTouched = (k: FieldKey, currentValue: string) => {
+  const markTouched = (k: FieldKey, currentValue: string): void => {
     setTouched((t) => ({ ...t, [k]: true }));
     const err = validateField(k, currentValue);
     setErrors((prev) => {
@@ -159,29 +177,63 @@ export function FormCard({
     });
   };
 
-  const handleValidateAndSubmit = async () => {
+  const fireTracking = (qualified: boolean): void => {
+    if (typeof window === "undefined") return;
+    const route =
+      routeSlug || (typeof window !== "undefined" ? window.location.pathname : "/");
+    // Mega optimizer event FIRST, then the GTM dataLayer signal.
+    window.MegaTag?.trackEvent?.("form_submit", { form_route: route, qualified });
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: "form_submit", form_route: route, qualified });
+    // Gated qualified-lead optimization event — only for 18+ holes AND $1M+.
+    if (qualified) {
+      window.MegaTag?.trackEvent?.("qualified_lead", { form_route: route });
+      window.dataLayer.push({ event: "qualified_lead", form_route: route });
+    }
+  };
+
+  // Validate FIRST, then submit. Button is type="button" so the optimizer's
+  // capture-phase listener never fires on empty/invalid clicks.
+  const handleValidateAndSubmit = async (): Promise<void> => {
     if (inFlightRef.current || submitting || submitted) return;
     const allErrors = validateAll(data);
     if (Object.keys(allErrors).length > 0) {
       setErrors(allErrors);
-      setTouched(
-        REQUIRED_ORDER.reduce<Partial<Record<FieldKey, boolean>>>((acc, k) => {
-          acc[k] = true;
-          return acc;
-        }, {})
-      );
+      setTouched({
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        courseType: true,
+        grossRevenue: true,
+      });
       const firstBad = REQUIRED_ORDER.find((k) => allErrors[k]);
-      if (firstBad) fieldRefs.current[firstBad]?.focus();
+      if (firstBad) {
+        const el = fieldRefs.current[firstBad];
+        try {
+          (el as HTMLElement | null)?.focus({ preventScroll: false });
+        } catch {
+          el?.focus();
+        }
+      }
       return;
     }
     inFlightRef.current = true;
     setSubmitting(true);
     setSubmitError(null);
-    const nineHole = data.courseType === "9-hole";
-    const under1m = data.grossRevenue === "Under $1M";
-    const qualified = !(nineHole || under1m);
-    const route =
-      routeSlug || (typeof window !== "undefined" ? window.location.pathname : "/");
+    // Qualification gate — 9-hole OR Under $1M disqualifies the optimization
+    // event, but ALL leads still submit to CRM + email.
+    const courseDQ = data.courseType === DISQUALIFYING.courseType;
+    const revenueDQ = data.grossRevenue === DISQUALIFYING.grossRevenue;
+    const qualified = !(courseDQ || revenueDQ);
+    const disqualification_reason =
+      courseDQ && revenueDQ
+        ? "nine_hole_and_revenue_under_1m"
+        : courseDQ
+          ? "nine_hole"
+          : revenueDQ
+            ? "revenue_under_1m"
+            : null;
     try {
       const res = await submit({
         firstName: data.firstName.trim(),
@@ -195,31 +247,22 @@ export function FormCard({
           ? `${SMS_CONSENT_TEXT} Privacy Policy: ${PRIVACY_POLICY_URL} | Terms & Conditions: ${TERMS_URL}`
           : "Not provided",
         qualified,
-        disqualification_reason:
-          nineHole && under1m
-            ? "nine_hole_and_revenue_under_1m"
-            : nineHole
-              ? "nine_hole"
-              : under1m
-                ? "revenue_under_1m"
-                : null,
-        route_slug: route,
+        disqualification_reason,
+        route_slug:
+          routeSlug ||
+          (typeof window !== "undefined" ? window.location.pathname : "/"),
       });
+      // A 2xx with a body that isn't {ok:true} is still a dropped lead. Only
+      // confirmed success fires conversions and shows the thank-you card.
       if (res?.ok !== true) {
         throw new Error("Submission not confirmed by server.");
       }
-      if (typeof window !== "undefined") {
-        window.MegaTag?.trackEvent?.("form_submit", { form_route: route, qualified });
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({ event: "form_submit", form_route: route, qualified });
-        if (qualified) {
-          window.MegaTag?.trackEvent?.("qualified_lead", { form_route: route });
-          window.dataLayer.push({ event: "qualified_lead", form_route: route });
-        }
-      }
+      fireTracking(qualified);
       setSubmitted(true);
     } catch (err) {
       console.error("Form submission error:", err);
+      // The visitor is fine, but the LEAD would be dropped: surface a retryable
+      // error and fire NO tracking so we never bill a phantom conversion.
       setSubmitError(SUBMIT_ERROR_MESSAGE);
     } finally {
       inFlightRef.current = false;
@@ -227,7 +270,12 @@ export function FormCard({
     }
   };
 
-  const cardBase = "bg-[var(--color-surface)] border border-[var(--color-border)] shadow-card-lg";
+  const handleNativeSubmit = (e: React.FormEvent): void => {
+    e.preventDefault();
+  };
+
+  const cardBase =
+    "bg-[var(--color-surface)] border border-[var(--color-border)] shadow-card-lg";
 
   if (submitted) {
     return (
@@ -239,7 +287,9 @@ export function FormCard({
           <h3 className="font-display text-2xl text-[var(--color-text)] md:text-3xl">
             Request received.
           </h3>
-          <p className="text-base leading-relaxed text-[var(--color-muted)]">{thankYouBody}</p>
+          <p className="text-base leading-relaxed text-[var(--color-muted)]">
+            {thankYouBody}
+          </p>
           <p className="text-sm text-[var(--color-muted)]">
             Prefer to talk now? Call{" "}
             <span className="whitespace-nowrap font-semibold text-[var(--color-text)]">
@@ -252,17 +302,16 @@ export function FormCard({
     );
   }
 
-  const showErr = (k: FieldKey) => Boolean(touched[k] && errors[k]);
-  const errId = (k: FieldKey) => `${idPrefix}-${k}-error`;
+  const showErr = (k: FieldKey): boolean => Boolean(touched[k] && errors[k]);
+  const errId = (k: FieldKey): string => `${idPrefix}-${k}-error`;
   const fieldCls =
     "w-full rounded-lg px-3.5 py-3 text-sm bg-[var(--color-primary)] border border-[var(--color-border-strong)] text-[var(--color-text)] placeholder:text-[var(--color-muted)] transition-colors focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/35";
-  const inputCls = (k: FieldKey) => `${fieldCls} ${showErr(k) ? "lp-input-error" : ""}`;
-  const selectCls = (k: FieldKey) =>
-    `${inputCls(k)} appearance-none pr-9 ${data[k] ? "" : "text-[var(--color-muted)]"}`;
+  const inputCls = (k: FieldKey): string =>
+    `${fieldCls} ${showErr(k) ? "lp-input-error" : ""}`;
 
   return (
     <form
-      onSubmit={(e) => e.preventDefault()}
+      onSubmit={handleNativeSubmit}
       noValidate
       aria-label="Request a free, confidential golf course evaluation"
       className={`${cardBase} space-y-3.5 rounded-2xl p-6 md:p-7`}
@@ -275,15 +324,12 @@ export function FormCard({
         <p className="text-sm leading-snug text-[var(--color-muted)]">{subheading}</p>
       </div>
 
+      {/* First / Last */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor={`${idPrefix}-firstName`} className="sr-only">
-            First name
-          </label>
+          <label htmlFor={`${idPrefix}-firstName`} className="sr-only">First name</label>
           <input
-            ref={(el) => {
-              fieldRefs.current.firstName = el;
-            }}
+            ref={(el) => { fieldRefs.current.firstName = el; }}
             id={`${idPrefix}-firstName`}
             name="firstName"
             type="text"
@@ -299,19 +345,15 @@ export function FormCard({
             disabled={submitting}
           />
           {showErr("firstName") && (
-            <p id={errId("firstName")} role="alert" className="lp-field-error">
+            <p id={errId("firstName")} role="alert" aria-live="polite" className="lp-field-error">
               {errors.firstName}
             </p>
           )}
         </div>
         <div>
-          <label htmlFor={`${idPrefix}-lastName`} className="sr-only">
-            Last name
-          </label>
+          <label htmlFor={`${idPrefix}-lastName`} className="sr-only">Last name</label>
           <input
-            ref={(el) => {
-              fieldRefs.current.lastName = el;
-            }}
+            ref={(el) => { fieldRefs.current.lastName = el; }}
             id={`${idPrefix}-lastName`}
             name="lastName"
             type="text"
@@ -327,21 +369,18 @@ export function FormCard({
             disabled={submitting}
           />
           {showErr("lastName") && (
-            <p id={errId("lastName")} role="alert" className="lp-field-error">
+            <p id={errId("lastName")} role="alert" aria-live="polite" className="lp-field-error">
               {errors.lastName}
             </p>
           )}
         </div>
       </div>
 
+      {/* Email */}
       <div>
-        <label htmlFor={`${idPrefix}-email`} className="sr-only">
-          Email
-        </label>
+        <label htmlFor={`${idPrefix}-email`} className="sr-only">Email</label>
         <input
-          ref={(el) => {
-            fieldRefs.current.email = el;
-          }}
+          ref={(el) => { fieldRefs.current.email = el; }}
           id={`${idPrefix}-email`}
           name="email"
           type="email"
@@ -358,20 +397,17 @@ export function FormCard({
           disabled={submitting}
         />
         {showErr("email") && (
-          <p id={errId("email")} role="alert" className="lp-field-error">
+          <p id={errId("email")} role="alert" aria-live="polite" className="lp-field-error">
             {errors.email}
           </p>
         )}
       </div>
 
+      {/* Phone */}
       <div>
-        <label htmlFor={`${idPrefix}-phone`} className="sr-only">
-          Phone
-        </label>
+        <label htmlFor={`${idPrefix}-phone`} className="sr-only">Phone</label>
         <input
-          ref={(el) => {
-            fieldRefs.current.phone = el;
-          }}
+          ref={(el) => { fieldRefs.current.phone = el; }}
           id={`${idPrefix}-phone`}
           name="phone"
           type="tel"
@@ -388,53 +424,85 @@ export function FormCard({
           disabled={submitting}
         />
         {showErr("phone") && (
-          <p id={errId("phone")} role="alert" className="lp-field-error">
+          <p id={errId("phone")} role="alert" aria-live="polite" className="lp-field-error">
             {errors.phone}
           </p>
         )}
       </div>
 
-      <QualifierSelect
-        idPrefix={idPrefix}
-        fieldKey="courseType"
-        value={data.courseType}
-        label="What type of golf course are you looking to sell?"
-        placeholder="What type of course are you selling?"
-        options={[...COURSE_TYPE_OPTIONS]}
-        className={selectCls("courseType")}
-        error={showErr("courseType") ? errors.courseType : undefined}
-        errId={errId("courseType")}
-        disabled={submitting}
-        setRef={(el) => {
-          fieldRefs.current.courseType = el;
-        }}
-        onChange={(v) => {
-          update("courseType", v);
-          markTouched("courseType", v);
-        }}
-        onBlur={(v) => markTouched("courseType", v)}
-      />
-      <QualifierSelect
-        idPrefix={idPrefix}
-        fieldKey="grossRevenue"
-        value={data.grossRevenue}
-        label="Annual gross revenue"
-        placeholder="Annual gross revenue"
-        options={[...GROSS_REVENUE_OPTIONS]}
-        className={selectCls("grossRevenue")}
-        error={showErr("grossRevenue") ? errors.grossRevenue : undefined}
-        errId={errId("grossRevenue")}
-        disabled={submitting}
-        setRef={(el) => {
-          fieldRefs.current.grossRevenue = el;
-        }}
-        onChange={(v) => {
-          update("grossRevenue", v);
-          markTouched("grossRevenue", v);
-        }}
-        onBlur={(v) => markTouched("grossRevenue", v)}
-      />
+      {/* Course type (qualifying select) */}
+      <div>
+        <label htmlFor={`${idPrefix}-courseType`} className="sr-only">
+          What type of golf course are you looking to sell?
+        </label>
+        <div className="relative">
+          <select
+            ref={(el) => { fieldRefs.current.courseType = el; }}
+            id={`${idPrefix}-courseType`}
+            name="courseType"
+            required
+            value={data.courseType}
+            onChange={(e) => {
+              update("courseType", e.target.value);
+              markTouched("courseType", e.target.value);
+            }}
+            onBlur={(e) => markTouched("courseType", e.target.value)}
+            className={`${inputCls("courseType")} appearance-none pr-9 ${data.courseType ? "" : "text-[var(--color-muted)]"}`}
+            aria-invalid={showErr("courseType") || undefined}
+            aria-describedby={showErr("courseType") ? errId("courseType") : undefined}
+            disabled={submitting}
+          >
+            <option value="">What type of course are you selling?</option>
+            {COURSE_TYPE_OPTIONS.map((o) => (
+              <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
+            ))}
+          </select>
+          <ChevronDown />
+        </div>
+        {showErr("courseType") && (
+          <p id={errId("courseType")} role="alert" aria-live="polite" className="lp-field-error">
+            {errors.courseType}
+          </p>
+        )}
+      </div>
 
+      {/* Gross revenue (qualifying select) */}
+      <div>
+        <label htmlFor={`${idPrefix}-grossRevenue`} className="sr-only">
+          What is your annual gross revenue?
+        </label>
+        <div className="relative">
+          <select
+            ref={(el) => { fieldRefs.current.grossRevenue = el; }}
+            id={`${idPrefix}-grossRevenue`}
+            name="grossRevenue"
+            required
+            value={data.grossRevenue}
+            onChange={(e) => {
+              update("grossRevenue", e.target.value);
+              markTouched("grossRevenue", e.target.value);
+            }}
+            onBlur={(e) => markTouched("grossRevenue", e.target.value)}
+            className={`${inputCls("grossRevenue")} appearance-none pr-9 ${data.grossRevenue ? "" : "text-[var(--color-muted)]"}`}
+            aria-invalid={showErr("grossRevenue") || undefined}
+            aria-describedby={showErr("grossRevenue") ? errId("grossRevenue") : undefined}
+            disabled={submitting}
+          >
+            <option value="">Annual gross revenue</option>
+            {GROSS_REVENUE_OPTIONS.map((o) => (
+              <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
+            ))}
+          </select>
+          <ChevronDown />
+        </div>
+        {showErr("grossRevenue") && (
+          <p id={errId("grossRevenue")} role="alert" aria-live="polite" className="lp-field-error">
+            {errors.grossRevenue}
+          </p>
+        )}
+      </div>
+
+      {/* SMS opt-in (optional — never required, never blocks submit) */}
       <div>
         <label
           htmlFor={`${idPrefix}-smsConsent`}
@@ -446,7 +514,7 @@ export function FormCard({
             type="checkbox"
             checked={data.smsConsent}
             onChange={(e) => setData((d) => ({ ...d, smsConsent: e.target.checked }))}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)] accent-[var(--color-secondary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/35"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)] accent-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/35"
             disabled={submitting}
           />
           <span>
@@ -476,7 +544,7 @@ export function FormCard({
         <p
           role="alert"
           aria-live="polite"
-          className="lp-field-error !mt-0 rounded-lg border border-[var(--color-error)]/35 px-3.5 py-2.5"
+          className="lp-field-error !mt-0 rounded-lg border border-[var(--color-error)]/35 bg-[#fef3f2] px-3.5 py-2.5"
         >
           {submitError}
         </p>
@@ -486,7 +554,7 @@ export function FormCard({
         type="button"
         onClick={handleValidateAndSubmit}
         disabled={submitting || submitted}
-        className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-secondary)] px-6 py-3.5 text-base font-semibold text-white transition-all hover:bg-[var(--color-secondary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-disabled)]"
+        className="mt-1 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)] disabled:cursor-not-allowed disabled:bg-[var(--color-disabled)] disabled:translate-y-0"
       >
         {submitting ? "Submitting…" : submitLabel}
         {!submitting && <Icon name="arrow" className="h-4 w-4" strokeWidth={2.4} />}
@@ -499,79 +567,10 @@ export function FormCard({
   );
 }
 
-interface QualifierSelectProps {
-  idPrefix: string;
-  fieldKey: string;
-  value: string;
-  label: string;
-  placeholder: string;
-  options: string[];
-  className: string;
-  error?: string;
-  errId: string;
-  disabled: boolean;
-  setRef: (el: HTMLSelectElement | null) => void;
-  onChange: (value: string) => void;
-  onBlur: (value: string) => void;
-}
-
-function QualifierSelect({
-  idPrefix,
-  fieldKey,
-  value,
-  label,
-  placeholder,
-  options,
-  className,
-  error,
-  errId,
-  disabled,
-  setRef,
-  onChange,
-  onBlur,
-}: QualifierSelectProps): React.JSX.Element {
-  const id = `${idPrefix}-${fieldKey}`;
-  return (
-    <div>
-      <label htmlFor={id} className="sr-only">
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          ref={setRef}
-          id={id}
-          name={fieldKey}
-          required
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={(e) => onBlur(e.target.value)}
-          className={className}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errId : undefined}
-          disabled={disabled}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((o) => (
-            <option key={o} value={o} className="text-[var(--color-text)]">
-              {o}
-            </option>
-          ))}
-        </select>
-        <ChevronDown />
-      </div>
-      {error && (
-        <p id={errId} role="alert" className="lp-field-error">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function ChevronDown(): React.JSX.Element {
+function ChevronDown(): React.ReactElement {
   return (
     <svg
-      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]"
+      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-accent)]"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
