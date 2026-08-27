@@ -75,6 +75,21 @@ export function Hero(): React.ReactElement {
                 </span>
               </a>
             </div>
+
+            {/* Secondary acquisition path — restrained/outlined so it stays
+                subordinate to the seller-first headline and gold CTA. */}
+            <div className="space-y-3 border-t border-[var(--color-text)]/10 pt-6">
+              <p className="max-w-xl text-sm leading-relaxed text-[var(--color-muted)]">
+                Looking to acquire a golf course? Access private and off-market opportunities nationwide.
+              </p>
+              <a
+                href="#buy-side"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-text)]/30 px-6 py-3 text-sm font-semibold text-[var(--color-text)] transition-all hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+              >
+                View Acquisition Opportunities
+                <Icon name="arrow" className="h-4 w-4" strokeWidth={2.2} />
+              </a>
+            </div>
           </Reveal>
         </div>
 
