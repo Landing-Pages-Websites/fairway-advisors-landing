@@ -33,32 +33,51 @@ const SUBMIT_ERROR_MESSAGE =
   "Something went wrong sending your request. Please try again, or call us at " + PHONE + ".";
 
 type FieldKey =
+  | "inquiryRole"
   | "firstName"
   | "lastName"
   | "email"
   | "phone"
   | "courseType"
-  | "grossRevenue";
+  | "grossRevenue"
+  | "acquireCourseType"
+  | "targetAcquisitionBudget";
 
 interface FormState {
+  inquiryRole: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   courseType: string;
   grossRevenue: string;
+  acquireCourseType: string;
+  targetAcquisitionBudget: string;
   smsConsent: boolean;
 }
 
 const INITIAL: FormState = {
+  inquiryRole: "",
   firstName: "",
   lastName: "",
   email: "",
   phone: "",
   courseType: "",
   grossRevenue: "",
+  acquireCourseType: "",
+  targetAcquisitionBudget: "",
   smsConsent: false,
 };
+
+// The dual path: the visitor MUST actively choose one before anything else.
+const INQUIRY_ROLE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "sell", label: "I want to sell a golf course" },
+  { value: "acquire", label: "I want to acquire a golf course" },
+];
+
+// Shared field styling — reused by text inputs and the qualifying selects.
+const FIELD_BASE_CLS =
+  "w-full rounded-lg px-3.5 py-3 text-sm bg-[var(--color-primary)] border border-[var(--color-border-strong)] text-[var(--color-text)] placeholder:text-[var(--color-muted)] transition-colors focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/35";
 
 const PRIVACY_POLICY_URL = "https://info.fairwayadvisors.com/privacy-policy";
 const TERMS_URL = "https://info.fairwayadvisors.com/terms-and-conditions";
@@ -68,17 +87,30 @@ const SMS_CONSENT_TEXT =
 
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
-const REQUIRED_ORDER: FieldKey[] = [
+// Shared fields validate on every path; the trailing two depend on the role
+// chosen, so the required set (and focus order) is derived from inquiryRole.
+const SHARED_ORDER: FieldKey[] = [
+  "inquiryRole",
   "firstName",
   "lastName",
   "email",
   "phone",
-  "courseType",
-  "grossRevenue",
 ];
+
+function requiredOrder(inquiryRole: string): FieldKey[] {
+  if (inquiryRole === "acquire") {
+    return [...SHARED_ORDER, "acquireCourseType", "targetAcquisitionBudget"];
+  }
+  if (inquiryRole === "sell") {
+    return [...SHARED_ORDER, "courseType", "grossRevenue"];
+  }
+  return SHARED_ORDER;
+}
 
 function validateField(key: FieldKey, value: string): string | undefined {
   switch (key) {
+    case "inquiryRole":
+      return value ? undefined : "Please tell us how we can help.";
     case "firstName":
       return value.trim() ? undefined : "First name is required.";
     case "lastName":
@@ -100,12 +132,16 @@ function validateField(key: FieldKey, value: string): string | undefined {
       return value ? undefined : "Please select your course type.";
     case "grossRevenue":
       return value ? undefined : "Please select your annual gross revenue.";
+    case "acquireCourseType":
+      return value ? undefined : "Please select your course type.";
+    case "targetAcquisitionBudget":
+      return value ? undefined : "Please select your target acquisition budget.";
   }
 }
 
 function validateAll(data: FormState): FieldErrors {
   const errors: FieldErrors = {};
-  REQUIRED_ORDER.forEach((k) => {
+  requiredOrder(data.inquiryRole).forEach((k) => {
     const err = validateField(k, data[k]);
     if (err) errors[k] = err;
   });
@@ -177,6 +213,27 @@ export function FormCard({
     });
   };
 
+  // Choosing a role clears its own error and drops any stale errors/touched
+  // state left on the now-inactive path so hidden fields never flag or leak.
+  const selectRole = (role: string): void => {
+    const inactive: FieldKey[] =
+      role === "acquire"
+        ? ["courseType", "grossRevenue"]
+        : ["acquireCourseType", "targetAcquisitionBudget"];
+    setData((d) => ({ ...d, inquiryRole: role }));
+    setTouched((t) => {
+      const next = { ...t, inquiryRole: true };
+      inactive.forEach((k) => delete next[k]);
+      return next;
+    });
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.inquiryRole;
+      inactive.forEach((k) => delete next[k]);
+      return next;
+    });
+  };
+
   const fireTracking = (qualified: boolean): void => {
     if (typeof window === "undefined") return;
     const route =
@@ -196,18 +253,16 @@ export function FormCard({
   // capture-phase listener never fires on empty/invalid clicks.
   const handleValidateAndSubmit = async (): Promise<void> => {
     if (inFlightRef.current || submitting || submitted) return;
+    const order = requiredOrder(data.inquiryRole);
     const allErrors = validateAll(data);
     if (Object.keys(allErrors).length > 0) {
       setErrors(allErrors);
-      setTouched({
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        courseType: true,
-        grossRevenue: true,
+      setTouched((t) => {
+        const next = { ...t };
+        order.forEach((k) => { next[k] = true; });
+        return next;
       });
-      const firstBad = REQUIRED_ORDER.find((k) => allErrors[k]);
+      const firstBad = order.find((k) => allErrors[k]);
       if (firstBad) {
         const el = fieldRefs.current[firstBad];
         try {
@@ -221,27 +276,41 @@ export function FormCard({
     inFlightRef.current = true;
     setSubmitting(true);
     setSubmitError(null);
-    // Qualification gate — 9-hole OR Under $1M disqualifies the optimization
-    // event, but ALL leads still submit to CRM + email.
-    const courseDQ = data.courseType === DISQUALIFYING.courseType;
-    const revenueDQ = data.grossRevenue === DISQUALIFYING.grossRevenue;
-    const qualified = !(courseDQ || revenueDQ);
-    const disqualification_reason =
-      courseDQ && revenueDQ
+    // Qualification gate — sellers are scored on 9-hole OR Under $1M (either
+    // disqualifies the optimization event, but ALL leads still submit).
+    // Acquire leads are NOT scored on seller fields; a valid acquire lead is
+    // treated as qualified — deeper acquire scoring is a downstream task.
+    const isAcquire = data.inquiryRole === "acquire";
+    const courseDQ = !isAcquire && data.courseType === DISQUALIFYING.courseType;
+    const revenueDQ = !isAcquire && data.grossRevenue === DISQUALIFYING.grossRevenue;
+    const qualified = isAcquire || !(courseDQ || revenueDQ);
+    const disqualification_reason = isAcquire
+      ? null
+      : courseDQ && revenueDQ
         ? "nine_hole_and_revenue_under_1m"
         : courseDQ
           ? "nine_hole"
           : revenueDQ
             ? "revenue_under_1m"
             : null;
+    // Only the active path's qualifying fields go on the payload — never both.
+    const pathFields = isAcquire
+      ? {
+          acquireCourseType: data.acquireCourseType,
+          targetAcquisitionBudget: data.targetAcquisitionBudget,
+        }
+      : {
+          courseType: data.courseType,
+          grossRevenue: data.grossRevenue,
+        };
     try {
       const res = await submit({
+        inquiryRole: data.inquiryRole,
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),
         email: data.email.trim(),
         phone: data.phone.replace(/\D/g, ""),
-        courseType: data.courseType,
-        grossRevenue: data.grossRevenue,
+        ...pathFields,
         smsConsent: data.smsConsent,
         smsConsentText: data.smsConsent
           ? `${SMS_CONSENT_TEXT} Privacy Policy: ${PRIVACY_POLICY_URL} | Terms & Conditions: ${TERMS_URL}`
@@ -304,10 +373,8 @@ export function FormCard({
 
   const showErr = (k: FieldKey): boolean => Boolean(touched[k] && errors[k]);
   const errId = (k: FieldKey): string => `${idPrefix}-${k}-error`;
-  const fieldCls =
-    "w-full rounded-lg px-3.5 py-3 text-sm bg-[var(--color-primary)] border border-[var(--color-border-strong)] text-[var(--color-text)] placeholder:text-[var(--color-muted)] transition-colors focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/35";
   const inputCls = (k: FieldKey): string =>
-    `${fieldCls} ${showErr(k) ? "lp-input-error" : ""}`;
+    `${FIELD_BASE_CLS} ${showErr(k) ? "lp-input-error" : ""}`;
 
   return (
     <form
@@ -323,6 +390,49 @@ export function FormCard({
         </h3>
         <p className="text-sm leading-snug text-[var(--color-muted)]">{subheading}</p>
       </div>
+
+      {/* Inquiry role — REQUIRED first control; drives the sell/acquire path */}
+      <fieldset className="space-y-2">
+        <legend className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+          How can we help?
+        </legend>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {INQUIRY_ROLE_OPTIONS.map((opt, i) => {
+            const selected = data.inquiryRole === opt.value;
+            return (
+              <label
+                key={opt.value}
+                htmlFor={`${idPrefix}-inquiryRole-${opt.value}`}
+                className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3.5 py-3 text-sm font-medium transition-colors ${
+                  selected
+                    ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-text)]"
+                    : "border-[var(--color-border-strong)] bg-[var(--color-primary)] text-[var(--color-muted)] hover:border-[var(--color-accent)]/60"
+                } ${showErr("inquiryRole") ? "lp-input-error" : ""}`}
+              >
+                <input
+                  ref={i === 0 ? (el) => { fieldRefs.current.inquiryRole = el; } : undefined}
+                  id={`${idPrefix}-inquiryRole-${opt.value}`}
+                  name="inquiryRole"
+                  type="radio"
+                  value={opt.value}
+                  checked={selected}
+                  onChange={() => selectRole(opt.value)}
+                  className="h-4 w-4 shrink-0 accent-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/35"
+                  disabled={submitting}
+                  aria-invalid={showErr("inquiryRole") || undefined}
+                  aria-describedby={showErr("inquiryRole") ? errId("inquiryRole") : undefined}
+                />
+                <span>{opt.label}</span>
+              </label>
+            );
+          })}
+        </div>
+        {showErr("inquiryRole") && (
+          <p id={errId("inquiryRole")} role="alert" aria-live="polite" className="lp-field-error">
+            {errors.inquiryRole}
+          </p>
+        )}
+      </fieldset>
 
       {/* First / Last */}
       <div className="grid grid-cols-2 gap-3">
@@ -430,77 +540,77 @@ export function FormCard({
         )}
       </div>
 
-      {/* Course type (qualifying select) */}
-      <div>
-        <label htmlFor={`${idPrefix}-courseType`} className="sr-only">
-          What type of golf course are you looking to sell?
-        </label>
-        <div className="relative">
-          <select
-            ref={(el) => { fieldRefs.current.courseType = el; }}
+      {/* Sell path — seller qualifying selects */}
+      {data.inquiryRole === "sell" && (
+        <>
+          <SelectField
             id={`${idPrefix}-courseType`}
             name="courseType"
-            required
+            label="What type of golf course are you looking to sell?"
+            placeholder="What type of course are you selling?"
+            options={COURSE_TYPE_OPTIONS}
             value={data.courseType}
-            onChange={(e) => {
-              update("courseType", e.target.value);
-              markTouched("courseType", e.target.value);
-            }}
-            onBlur={(e) => markTouched("courseType", e.target.value)}
-            className={`${inputCls("courseType")} appearance-none pr-9 ${data.courseType ? "" : "text-[var(--color-muted)]"}`}
-            aria-invalid={showErr("courseType") || undefined}
-            aria-describedby={showErr("courseType") ? errId("courseType") : undefined}
+            showError={showErr("courseType")}
+            error={errors.courseType}
+            errorId={errId("courseType")}
             disabled={submitting}
-          >
-            <option value="">What type of course are you selling?</option>
-            {COURSE_TYPE_OPTIONS.map((o) => (
-              <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
-            ))}
-          </select>
-          <ChevronDown />
-        </div>
-        {showErr("courseType") && (
-          <p id={errId("courseType")} role="alert" aria-live="polite" className="lp-field-error">
-            {errors.courseType}
-          </p>
-        )}
-      </div>
-
-      {/* Gross revenue (qualifying select) */}
-      <div>
-        <label htmlFor={`${idPrefix}-grossRevenue`} className="sr-only">
-          What is your annual gross revenue?
-        </label>
-        <div className="relative">
-          <select
-            ref={(el) => { fieldRefs.current.grossRevenue = el; }}
+            fieldRef={(el) => { fieldRefs.current.courseType = el; }}
+            onSelect={(v) => { update("courseType", v); markTouched("courseType", v); }}
+            onBlurField={(v) => markTouched("courseType", v)}
+          />
+          <SelectField
             id={`${idPrefix}-grossRevenue`}
             name="grossRevenue"
-            required
+            label="What is your annual gross revenue?"
+            placeholder="Annual gross revenue"
+            options={GROSS_REVENUE_OPTIONS}
             value={data.grossRevenue}
-            onChange={(e) => {
-              update("grossRevenue", e.target.value);
-              markTouched("grossRevenue", e.target.value);
-            }}
-            onBlur={(e) => markTouched("grossRevenue", e.target.value)}
-            className={`${inputCls("grossRevenue")} appearance-none pr-9 ${data.grossRevenue ? "" : "text-[var(--color-muted)]"}`}
-            aria-invalid={showErr("grossRevenue") || undefined}
-            aria-describedby={showErr("grossRevenue") ? errId("grossRevenue") : undefined}
+            showError={showErr("grossRevenue")}
+            error={errors.grossRevenue}
+            errorId={errId("grossRevenue")}
             disabled={submitting}
-          >
-            <option value="">Annual gross revenue</option>
-            {GROSS_REVENUE_OPTIONS.map((o) => (
-              <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
-            ))}
-          </select>
-          <ChevronDown />
-        </div>
-        {showErr("grossRevenue") && (
-          <p id={errId("grossRevenue")} role="alert" aria-live="polite" className="lp-field-error">
-            {errors.grossRevenue}
-          </p>
-        )}
-      </div>
+            fieldRef={(el) => { fieldRefs.current.grossRevenue = el; }}
+            onSelect={(v) => { update("grossRevenue", v); markTouched("grossRevenue", v); }}
+            onBlurField={(v) => markTouched("grossRevenue", v)}
+          />
+        </>
+      )}
+
+      {/* Acquire path — buyer qualifying selects (seller fields unmounted) */}
+      {data.inquiryRole === "acquire" && (
+        <>
+          <SelectField
+            id={`${idPrefix}-acquireCourseType`}
+            name="acquireCourseType"
+            label="What type of golf course are you looking to acquire?"
+            placeholder="What type of course are you seeking?"
+            options={COURSE_TYPE_OPTIONS}
+            value={data.acquireCourseType}
+            showError={showErr("acquireCourseType")}
+            error={errors.acquireCourseType}
+            errorId={errId("acquireCourseType")}
+            disabled={submitting}
+            fieldRef={(el) => { fieldRefs.current.acquireCourseType = el; }}
+            onSelect={(v) => { update("acquireCourseType", v); markTouched("acquireCourseType", v); }}
+            onBlurField={(v) => markTouched("acquireCourseType", v)}
+          />
+          <SelectField
+            id={`${idPrefix}-targetAcquisitionBudget`}
+            name="targetAcquisitionBudget"
+            label="What is your target acquisition budget?"
+            placeholder="Target acquisition budget"
+            options={GROSS_REVENUE_OPTIONS}
+            value={data.targetAcquisitionBudget}
+            showError={showErr("targetAcquisitionBudget")}
+            error={errors.targetAcquisitionBudget}
+            errorId={errId("targetAcquisitionBudget")}
+            disabled={submitting}
+            fieldRef={(el) => { fieldRefs.current.targetAcquisitionBudget = el; }}
+            onSelect={(v) => { update("targetAcquisitionBudget", v); markTouched("targetAcquisitionBudget", v); }}
+            onBlurField={(v) => markTouched("targetAcquisitionBudget", v)}
+          />
+        </>
+      )}
 
       {/* SMS opt-in (optional — never required, never blocks submit) */}
       <div>
@@ -563,6 +673,60 @@ export function FormCard({
         Completely confidential. We&apos;ll only use your details to prepare your evaluation.
       </p>
     </form>
+  );
+}
+
+interface SelectFieldProps {
+  id: string;
+  name: string;
+  label: string;
+  placeholder: string;
+  options: string[];
+  value: string;
+  showError: boolean;
+  error?: string;
+  errorId: string;
+  disabled: boolean;
+  fieldRef: (el: HTMLSelectElement | null) => void;
+  onSelect: (value: string) => void;
+  onBlurField: (value: string) => void;
+}
+
+function SelectField(props: SelectFieldProps): React.ReactElement {
+  const { id, name, label, placeholder, options, value } = props;
+  const { showError, error, errorId, disabled, fieldRef, onSelect, onBlurField } = props;
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          ref={fieldRef}
+          id={id}
+          name={name}
+          required
+          value={value}
+          onChange={(e) => onSelect(e.target.value)}
+          onBlur={(e) => onBlurField(e.target.value)}
+          className={`${FIELD_BASE_CLS} ${showError ? "lp-input-error" : ""} appearance-none pr-9 ${value ? "" : "text-[var(--color-muted)]"}`}
+          aria-invalid={showError || undefined}
+          aria-describedby={showError ? errorId : undefined}
+          disabled={disabled}
+        >
+          <option value="">{placeholder}</option>
+          {options.map((o) => (
+            <option key={o} value={o} className="text-[var(--color-text)]">{o}</option>
+          ))}
+        </select>
+        <ChevronDown />
+      </div>
+      {showError && (
+        <p id={errorId} role="alert" aria-live="polite" className="lp-field-error">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 
