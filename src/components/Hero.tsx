@@ -10,7 +10,7 @@ export function Hero(): React.ReactElement {
   return (
     <section
       id="hero"
-      className="relative isolate overflow-hidden bg-[var(--color-primary)] pb-16 pt-28 md:pb-24 md:pt-36"
+      className="relative isolate overflow-hidden bg-[var(--color-primary)] pb-16 pt-20 sm:pt-28 md:pb-24 md:pt-36"
     >
       {/* Full-bleed golf-course photography + cinematic navy wash */}
       <div className="absolute inset-0 -z-10">
@@ -36,10 +36,10 @@ export function Hero(): React.ReactElement {
             aria-hidden
             className="pointer-events-none absolute -inset-x-5 -top-28 bottom-0 -z-[1] bg-[linear-gradient(180deg,rgba(10,13,27,0.62)_0%,rgba(10,13,27,0.55)_62%,rgba(10,13,27,0.28)_88%,rgba(10,13,27,0)_100%)] lg:hidden"
           />
-          <Reveal className="space-y-6">
+          <Reveal className="space-y-4 sm:space-y-6">
             <p className="eyebrow">{HERO.eyebrow}</p>
 
-            <h1 className="font-display font-black leading-[1.02] tracking-[-0.02em] text-[var(--color-text)] text-[2.75rem] sm:text-6xl lg:text-[5rem]">
+            <h1 className="font-display font-black leading-[1.02] tracking-[-0.02em] text-[var(--color-text)] text-[2rem] sm:text-6xl lg:text-[5rem]">
               {HERO.h1Lead}
               <span className="align-super text-[0.4em] text-[var(--color-accent)]">
                 {HERO.h1Trademark}
@@ -47,15 +47,15 @@ export function Hero(): React.ReactElement {
               <span className="text-[var(--color-accent)]">{HERO.h1Punct}</span>
             </h1>
 
-            <p className="max-w-xl text-lg font-light leading-relaxed text-[var(--color-text)]/90 md:text-xl">
+            <p className="max-w-xl text-lg font-light leading-snug text-[var(--color-text)]/90 sm:leading-relaxed md:text-xl">
               {HERO.subhead}
             </p>
 
-            <p className="max-w-xl text-base leading-relaxed text-[var(--color-muted)]">
+            <p className="max-w-xl text-base leading-snug text-[var(--color-muted)] sm:leading-relaxed">
               {HERO.supporting}
             </p>
 
-            <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:gap-4">
               <a
                 href="#lead-form"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-7 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] lg:hidden"
@@ -78,7 +78,7 @@ export function Hero(): React.ReactElement {
 
             {/* Secondary acquisition path — restrained/outlined so it stays
                 subordinate to the seller-first headline and gold CTA. */}
-            <div className="space-y-3 border-t border-[var(--color-text)]/10 pt-6">
+            <div className="space-y-3 border-t border-[var(--color-text)]/10 pt-4 sm:pt-6">
               <p className="max-w-xl text-sm leading-relaxed text-[var(--color-muted)]">
                 Looking to acquire a golf course? Access private and off-market opportunities nationwide.
               </p>
