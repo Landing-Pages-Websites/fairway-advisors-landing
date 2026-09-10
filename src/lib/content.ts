@@ -42,7 +42,7 @@ export const HERO = {
   h1Trademark: "®",
   h1Punct: ".",
   subhead:
-    "Find out what your course is worth — a free, confidential evaluation for courses with 18+ holes and $1M+ in gross revenue.",
+    "Find out what your course is worth — a free, confidential evaluation for courses with 18+ holes and $1M+ in gross revenue. Owners preparing a golf course sale can start a confidential brokerage conversation.",
   supporting:
     "Fairway Advisors is a golf course brokerage and advisory firm with over $1 billion sold and advised — an unrivaled track record from California to New York.",
 };

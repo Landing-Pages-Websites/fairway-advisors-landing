@@ -79,6 +79,9 @@ export function Hero(): React.ReactElement {
             {/* Secondary acquisition path — restrained/outlined so it stays
                 subordinate to the seller-first headline and gold CTA. */}
             <div className="space-y-3 border-t border-[var(--color-text)]/10 pt-4 sm:pt-6">
+              <h2 className="font-display text-lg font-bold tracking-[-0.01em] text-[var(--color-text)]">
+                Golf Course Acquisitions
+              </h2>
               <p className="max-w-xl text-sm leading-relaxed text-[var(--color-muted)]">
                 Looking to acquire a golf course? Access private and off-market opportunities nationwide.
               </p>
