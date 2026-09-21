@@ -1,12 +1,35 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
 import { FormCard } from "@/components/FormCard";
 import { Icon } from "@/components/icons";
 import { HERO, PHONE, PHONE_HREF } from "@/lib/content";
+import { hasAcquireToken } from "@/lib/acquisitionMode";
+
+// The hero form's acquire radio doubles as the scroll/focus target for the
+// acquisition-mode CTA — no new anchor or route is introduced.
+const HERO_ACQUIRE_TARGET_ID = "hero-inquiryRole-acquire";
 
 export function Hero(): React.ReactElement {
+  // Detected after mount (client-only) so ordinary traffic renders the
+  // seller-first hero unchanged; the Buy-Side token flips it to acquisition mode.
+  const [acquireMode, setAcquireMode] = useState(false);
+  useEffect(() => {
+    if (hasAcquireToken(window.location.search)) setAcquireMode(true);
+  }, []);
+
+  // Scroll the existing hero form into view and focus its (preselected) acquire
+  // radio. Stays on the same route and leaves the URL untouched.
+  const focusHeroForm = (): void => {
+    const el = document.getElementById(HERO_ACQUIRE_TARGET_ID);
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+  };
+
   return (
     <section
       id="hero"
@@ -56,13 +79,24 @@ export function Hero(): React.ReactElement {
             </p>
 
             <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:gap-4">
-              <a
-                href="#lead-form"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-7 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] lg:hidden"
-              >
-                Find out what your course is worth
-                <Icon name="arrow" className="h-4 w-4" strokeWidth={2.2} />
-              </a>
+              {acquireMode ? (
+                <button
+                  type="button"
+                  onClick={focusHeroForm}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-7 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] lg:hidden"
+                >
+                  Acquire a Golf Course
+                  <Icon name="arrow" className="h-4 w-4" strokeWidth={2.2} />
+                </button>
+              ) : (
+                <a
+                  href="#lead-form"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-7 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] lg:hidden"
+                >
+                  Find out what your course is worth
+                  <Icon name="arrow" className="h-4 w-4" strokeWidth={2.2} />
+                </a>
+              )}
               <a
                 href={PHONE_HREF}
                 className="inline-flex items-center gap-2 rounded-md px-1 font-semibold text-[var(--color-text)] transition-colors hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"

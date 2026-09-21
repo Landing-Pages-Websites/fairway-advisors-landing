@@ -189,7 +189,7 @@ export const BUY_SIDE = {
   headline: "Looking to acquire?",
   body: "Fairway Advisors represents select buying entities seeking off-market golf assets. We match opportunities to your investment criteria and manage the transaction through negotiation, due diligence, and closing.",
   detail:
-    "We work with institutional investors, private-equity groups, and qualified individual buyers pursuing acquisitions in the $1M–$50M+ range.",
+    "We work with qualified buyers seeking select private and off-market golf course acquisitions nationwide, with a focus on $2M+ opportunities.",
   cta: "Contact us",
 };
 
