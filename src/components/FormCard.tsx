@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMegaLeadForm } from "@/hooks/useMegaLeadForm";
+import { hasAcquireToken } from "@/lib/acquisitionMode";
 import {
   CTA,
   PHONE,
@@ -74,6 +75,12 @@ const INQUIRY_ROLE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
   { value: "sell", label: "I want to sell a golf course" },
   { value: "acquire", label: "I want to acquire a golf course" },
 ];
+
+// Acquire-path presentation overrides. Whenever the acquire role is active
+// (preselected by the Buy-Side token or chosen manually) the heading and submit
+// copy switch to buyer language; the seller/default copy returns on "sell".
+const ACQUIRE_HEADING = "Tell us what you want to acquire";
+const ACQUIRE_SUBMIT_LABEL = "Request acquisition opportunities.";
 
 // Shared field styling — reused by text inputs and the qualifying selects.
 const FIELD_BASE_CLS =
@@ -187,6 +194,17 @@ export function FormCard({
   // Synchronous re-entrancy guard — blocks duplicate fires from rapid clicks.
   const inFlightRef = useRef(false);
   const fieldRefs = useRef<Partial<Record<FieldKey, HTMLElement | null>>>({});
+
+  // Buy-Side token preselects the acquire path once on mount, only while the
+  // visitor hasn't chosen a role yet — a later manual "sell" is never overridden.
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasAcquireToken(window.location.search)) return;
+    setData((d) => (d.inquiryRole ? d : { ...d, inquiryRole: "acquire" }));
+  }, []);
+
+  const isAcquireRole = data.inquiryRole === "acquire";
+  const activeHeading = isAcquireRole ? ACQUIRE_HEADING : heading;
+  const activeSubmitLabel = isAcquireRole ? ACQUIRE_SUBMIT_LABEL : submitLabel;
 
   const update = (k: FieldKey, v: string): void => {
     setData((d) => ({ ...d, [k]: v }));
@@ -386,7 +404,7 @@ export function FormCard({
       <div className="mb-1 space-y-1.5">
         <p className="eyebrow">{eyebrow}</p>
         <h3 className="font-display text-2xl leading-tight text-[var(--color-text)] md:text-[1.9rem]">
-          {heading}
+          {activeHeading}
         </h3>
         <p className="text-sm leading-snug text-[var(--color-muted)]">{subheading}</p>
       </div>
@@ -665,7 +683,7 @@ export function FormCard({
         disabled={submitting || submitted}
         className="mt-1 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)] disabled:cursor-not-allowed disabled:bg-[var(--color-disabled)] disabled:translate-y-0"
       >
-        {submitting ? "Submitting…" : submitLabel}
+        {submitting ? "Submitting…" : activeSubmitLabel}
         {!submitting && <Icon name="arrow" className="h-4 w-4" strokeWidth={2.4} />}
       </button>
 
