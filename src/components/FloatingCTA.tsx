@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { CTA, PHONE, PHONE_HREF } from "@/lib/content";
 import { Icon } from "@/components/icons";
 
-// Mobile sticky action bar — the free-evaluation CTA + phone, always one tap away.
+// Mobile sticky action bar — the shared conversation CTA + phone, always one tap away.
 export function FloatingCTA(): React.ReactElement {
   const [show, setShow] = useState(false);
 
@@ -26,9 +26,9 @@ export function FloatingCTA(): React.ReactElement {
       <div className="flex items-center gap-2.5">
         <a
           href={CTA.formAnchor}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)] shadow-cta"
+          className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2 text-center text-sm font-semibold leading-tight text-[var(--color-primary)] shadow-cta"
         >
-          What&apos;s my course worth?
+          {CTA.primary}
           <Icon name="arrow" className="h-4 w-4" strokeWidth={2.2} />
         </a>
         <a

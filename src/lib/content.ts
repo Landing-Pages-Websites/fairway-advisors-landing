@@ -1,4 +1,4 @@
-// Site-wide content + config for Fairway Advisors — sell-side golf brokerage LP.
+// Site-wide content + config for Fairway Advisors — dual-purpose buy/sell golf brokerage LP.
 // Single source of truth for copy, phone, form options, and tracking IDs.
 // Messaging guardrails (verbatim, do NOT alter):
 //   • Always "over $1 billion sold AND advised" — never "sold" alone.
@@ -12,7 +12,7 @@ export const PHONE = "(214) 485-1500";
 export const PHONE_HREF = "tel:2144851500";
 
 export const CTA = {
-  primary: "Find out what your course is worth",
+  primary: "Start a confidential conversation",
   secondary: "Call (214) 485-1500",
   formAnchor: "#lead-form",
 };
@@ -30,21 +30,22 @@ export const BRAND = {
 
 export const CURRENT_YEAR = new Date().getFullYear();
 
-// ─── Hero (sell-side, free-evaluation offer) ───
+// Shared buy/sell transaction scope — $3M+ is the PURCHASE/TRANSACTION size on
+// both paths, never a seller revenue threshold (see GROSS_REVENUE_OPTIONS).
+export const TRANSACTION_SCOPE = "18-hole or larger golf courses in $3M+ transactions";
+
+// ─── Hero (one unified buy/sell promise; the form branches by role) ───
 export const HERO = {
-  eyebrow: "Golf Course Brokerage & Advisory",
   chips: [
     "Over $1 billion sold & advised",
     "20+ years",
     "Confidential & invitation-only",
   ],
-  h1Lead: "The Business of Golf",
-  h1Trademark: "®",
-  h1Punct: ".",
-  subhead:
-    "Find out what your course is worth — a free, confidential evaluation for courses with 18+ holes and $1M+ in gross revenue. Owners preparing a golf course sale can start a confidential brokerage conversation.",
+  h1: "Buy or Sell a Golf Course",
+  positioning:
+    `Fairway Advisors advises buyers and sellers of ${TRANSACTION_SCOPE} nationwide.`,
   supporting:
-    "Fairway Advisors is a golf course brokerage and advisory firm with over $1 billion sold and advised — an unrivaled track record from California to New York.",
+    "Over $1 billion sold and advised — an unrivaled track record from California to New York.",
 };
 
 // ─── Trust bar (verbatim proof stats — messaging guardrails) ───
@@ -189,7 +190,7 @@ export const BUY_SIDE = {
   headline: "Looking to acquire?",
   body: "Fairway Advisors represents select buying entities seeking off-market golf assets. We match opportunities to your investment criteria and manage the transaction through negotiation, due diligence, and closing.",
   detail:
-    "We work with qualified buyers seeking select private and off-market golf course acquisitions nationwide, with a focus on $2M+ opportunities.",
+    `We work with qualified buyers seeking select private and off-market acquisitions of ${TRANSACTION_SCOPE} nationwide.`,
   cta: "Contact us",
 };
 
@@ -234,19 +235,38 @@ export const FAQ = [
 // ─── Final CTA ───
 export const FINAL_CTA = {
   headline: "There's a Major Difference®.",
-  headlineAccent: "Find out what your course is worth.",
-  body: "Request your free, confidential evaluation — or call to speak with us directly. For courses with 18+ holes and $1M+ in gross revenue.",
+  headlineAccent: "Buy or sell with a golf specialist.",
+  body: `Start a confidential conversation — or call to speak with us directly. For buyers and sellers of ${TRANSACTION_SCOPE} nationwide.`,
+};
+
+// ─── Lead-form copy — undecided state uses the shared conversation copy;
+// each role (sell / acquire) swaps in its own heading, button, and thank-you. ───
+const THANK_YOU_LEAD =
+  "Thank you — your request is confidential and in good hands. A Fairway Advisors principal will reach out";
+
+export const FORM_COPY = {
+  eyebrow: "Private & confidential",
+  subheading: `No obligation. For buyers and sellers of ${TRANSACTION_SCOPE}.`,
+  shared: {
+    heading: CTA.primary,
+    submitLabel: CTA.primary,
+    thankYouBody: `${THANK_YOU_LEAD} to you personally.`,
+  },
+  sell: {
+    heading: "Tell us about your golf course",
+    submitLabel: "Discuss a potential sale",
+    thankYouBody: `${THANK_YOU_LEAD} personally to discuss a potential sale of your course.`,
+  },
+  acquire: {
+    heading: "Tell us what you want to acquire",
+    submitLabel: "Request acquisition opportunities",
+    thankYouBody: `${THANK_YOU_LEAD} personally to discuss acquisition opportunities.`,
+  },
 };
 
 // ─── Lead-form select options (wired exactly to the LeadFormField contract) ───
 export const COURSE_TYPE_OPTIONS = ["9-hole", "18-hole", "27-hole or more"];
 export const GROSS_REVENUE_OPTIONS = ["Under $1M", "$1M–$2M", "$2M+"];
-
-// The two answers that gate the qualified-lead optimization event.
-export const DISQUALIFYING = {
-  courseType: "9-hole",
-  grossRevenue: "Under $1M",
-};
 
 // ─── Mega tracking — real Fairway Advisors IDs. NO Meta Pixel (Meta is OFF). ───
 export const TRACKING = {

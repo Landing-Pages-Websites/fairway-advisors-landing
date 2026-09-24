@@ -28,7 +28,7 @@ export function Header(): React.ReactElement {
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-5 md:px-8">
         <a
           href="#hero"
-          className="flex min-w-0 max-w-[190px] shrink items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] md:max-w-[230px] lg:max-w-none"
+          className="flex min-w-0 max-w-[150px] shrink items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] md:max-w-[230px] lg:max-w-none"
           aria-label="Fairway Advisors — home"
         >
           <Image
@@ -52,11 +52,10 @@ export function Header(): React.ReactElement {
           </a>
           <a
             href={CTA.formAnchor}
-            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--color-accent)] px-3 text-[13px] font-semibold leading-[40px] text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] md:gap-2 md:px-5 md:text-sm md:leading-[44px]"
+            className="inline-flex min-h-10 max-w-[172px] items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-3 py-1 text-[12.5px] font-semibold leading-tight text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] md:min-h-11 md:max-w-none md:gap-2 md:px-5 md:text-sm"
           >
-            <span className="hidden whitespace-nowrap md:inline">{CTA.primary}</span>
-            <span className="whitespace-nowrap md:hidden">Free evaluation</span>
-            <Icon name="arrow" className="h-3.5 w-3.5 shrink-0" strokeWidth={2.4} />
+            <span className="md:whitespace-nowrap">{CTA.primary}</span>
+            <Icon name="arrow" className="hidden h-3.5 w-3.5 shrink-0 md:block" strokeWidth={2.4} />
           </a>
         </div>
       </div>
