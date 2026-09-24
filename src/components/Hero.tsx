@@ -49,9 +49,9 @@ export function Hero(): React.ReactElement {
         <div className="photo-wash-side absolute inset-0 hidden lg:block" />
       </div>
 
-      <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-5 md:px-8 lg:grid-cols-12 lg:gap-14">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 px-5 md:px-8 lg:grid-cols-12 lg:gap-14">
         {/* Copy */}
-        <div className="relative lg:col-span-7">
+        <div className="relative min-w-0 lg:col-span-7">
           {/* Localized text scrim — mobile/tablet only (desktop uses .photo-wash-side).
               Keeps cream heading + muted supporting copy legible over the now-lighter
               photo wash, fading to transparent so the golf course still shows through. */}
@@ -127,7 +127,7 @@ export function Hero(): React.ReactElement {
         </div>
 
         {/* Form */}
-        <div className="lg:col-span-5">
+        <div className="min-w-0 lg:col-span-5">
           <Reveal delay={120}>
             <FormCard idPrefix="hero" />
           </Reveal>
