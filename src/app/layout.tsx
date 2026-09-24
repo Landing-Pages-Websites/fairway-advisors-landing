@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Raleway } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import { TRANSACTION_SCOPE } from "@/lib/content";
 
 const display = Playfair_Display({
   subsets: ["latin"],
@@ -25,13 +26,13 @@ const GTM_ID = "GTM-KRNF4P5";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fairwayadvisors.com"),
-  title: "The Business of Golf® | Fairway Advisors — Sell Your Golf Course",
+  title: "Buy or Sell a Golf Course | Fairway Advisors — The Business of Golf®",
   description:
-    "Fairway Advisors is a golf course brokerage and advisory firm with over $1 billion sold and advised. Find out what your course is worth — a free, confidential evaluation for courses with 18+ holes and $1M+ gross revenue.",
+    `Fairway Advisors advises buyers and sellers of ${TRANSACTION_SCOPE} nationwide. Over $1 billion sold and advised. Start a confidential conversation.`,
   openGraph: {
-    title: "The Business of Golf® | Fairway Advisors",
+    title: "Buy or Sell a Golf Course | Fairway Advisors",
     description:
-      "Over $1 billion sold and advised. An unrivaled track record from California to New York. Find out what your golf course is worth — free and confidential.",
+      `Over $1 billion sold and advised — an unrivaled track record from California to New York. Advising buyers and sellers of ${TRANSACTION_SCOPE} nationwide.`,
     images: ["/images/hero-wide.jpg"],
     type: "website",
   },

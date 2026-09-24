@@ -4,11 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useMegaLeadForm } from "@/hooks/useMegaLeadForm";
 import { hasAcquireToken } from "@/lib/acquisitionMode";
 import {
-  CTA,
   PHONE,
   COURSE_TYPE_OPTIONS,
   GROSS_REVENUE_OPTIONS,
-  DISQUALIFYING,
+  FORM_COPY,
 } from "@/lib/content";
 import { Icon } from "@/components/icons";
 
@@ -40,9 +39,7 @@ type FieldKey =
   | "email"
   | "phone"
   | "courseType"
-  | "grossRevenue"
-  | "acquireCourseType"
-  | "targetAcquisitionBudget";
+  | "grossRevenue";
 
 interface FormState {
   inquiryRole: string;
@@ -52,8 +49,6 @@ interface FormState {
   phone: string;
   courseType: string;
   grossRevenue: string;
-  acquireCourseType: string;
-  targetAcquisitionBudget: string;
   smsConsent: boolean;
 }
 
@@ -65,8 +60,6 @@ const INITIAL: FormState = {
   phone: "",
   courseType: "",
   grossRevenue: "",
-  acquireCourseType: "",
-  targetAcquisitionBudget: "",
   smsConsent: false,
 };
 
@@ -76,13 +69,16 @@ const INQUIRY_ROLE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
   { value: "acquire", label: "I want to acquire a golf course" },
 ];
 
-// Acquire-path presentation overrides. Whenever the acquire role is active
-// (preselected by the Buy-Side token or chosen manually) the heading and submit
-// copy switch to buyer language; the seller/default copy returns on "sell".
-const ACQUIRE_HEADING = "Tell us what you want to acquire";
-const ACQUIRE_SUBMIT_LABEL = "Request acquisition opportunities.";
+// Role-aware presentation: the acquire role (preselected by the Buy-Side token
+// or chosen manually) and the sell role override the shared undecided copy.
+type RoleCopy = typeof FORM_COPY.shared;
 
-// Shared field styling — reused by text inputs and the qualifying selects.
+const ROLE_COPY: Readonly<Record<string, RoleCopy>> = {
+  sell: FORM_COPY.sell,
+  acquire: FORM_COPY.acquire,
+};
+
+// Shared field styling — reused by text inputs and the seller selects.
 const FIELD_BASE_CLS =
   "w-full rounded-lg px-3.5 py-3 text-sm bg-[var(--color-primary)] border border-[var(--color-border-strong)] text-[var(--color-text)] placeholder:text-[var(--color-muted)] transition-colors focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/35";
 
@@ -94,8 +90,8 @@ const SMS_CONSENT_TEXT =
 
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
-// Shared fields validate on every path; the trailing two depend on the role
-// chosen, so the required set (and focus order) is derived from inquiryRole.
+// Shared fields validate on every path; only the sell role adds the two seller
+// fields, so the required set (and focus order) is derived from inquiryRole.
 const SHARED_ORDER: FieldKey[] = [
   "inquiryRole",
   "firstName",
@@ -104,14 +100,10 @@ const SHARED_ORDER: FieldKey[] = [
   "phone",
 ];
 
+const SELLER_FIELDS: FieldKey[] = ["courseType", "grossRevenue"];
+
 function requiredOrder(inquiryRole: string): FieldKey[] {
-  if (inquiryRole === "acquire") {
-    return [...SHARED_ORDER, "acquireCourseType", "targetAcquisitionBudget"];
-  }
-  if (inquiryRole === "sell") {
-    return [...SHARED_ORDER, "courseType", "grossRevenue"];
-  }
-  return SHARED_ORDER;
+  return inquiryRole === "sell" ? [...SHARED_ORDER, ...SELLER_FIELDS] : SHARED_ORDER;
 }
 
 function validateField(key: FieldKey, value: string): string | undefined {
@@ -139,10 +131,6 @@ function validateField(key: FieldKey, value: string): string | undefined {
       return value ? undefined : "Please select your course type.";
     case "grossRevenue":
       return value ? undefined : "Please select your annual gross revenue.";
-    case "acquireCourseType":
-      return value ? undefined : "Please select your course type.";
-    case "targetAcquisitionBudget":
-      return value ? undefined : "Please select your target acquisition budget.";
   }
 }
 
@@ -163,24 +151,44 @@ function formatPhone(value: string): string {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
+// Only the active path's fields go on the payload: sellers add their two
+// seller fields, buyers submit contact fields + inquiryRole only.
+function buildFormData(data: FormState, routeSlug: string): Record<string, unknown> {
+  const sellerFields =
+    data.inquiryRole === "sell"
+      ? { courseType: data.courseType, grossRevenue: data.grossRevenue }
+      : {};
+  return {
+    inquiryRole: data.inquiryRole,
+    firstName: data.firstName.trim(),
+    lastName: data.lastName.trim(),
+    email: data.email.trim(),
+    phone: data.phone.replace(/\D/g, ""),
+    ...sellerFields,
+    smsConsent: data.smsConsent,
+    smsConsentText: data.smsConsent
+      ? `${SMS_CONSENT_TEXT} Privacy Policy: ${PRIVACY_POLICY_URL} | Terms & Conditions: ${TERMS_URL}`
+      : "Not provided",
+    route_slug: routeSlug,
+  };
+}
+
+// Conversion signals — fired exactly once, only after a confirmed {ok:true}.
+function fireTracking(route: string): void {
+  // Mega optimizer event FIRST, then the GTM dataLayer signal.
+  window.MegaTag?.trackEvent?.("form_submit", { form_route: route });
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: "form_submit", form_route: route });
+}
+
 interface FormCardProps {
   idPrefix?: string;
-  eyebrow?: string;
-  heading?: string;
-  subheading?: string;
-  submitLabel?: string;
   routeSlug?: string;
-  thankYouBody?: string;
 }
 
 export function FormCard({
   idPrefix = "lead",
-  eyebrow = "Free confidential evaluation",
-  heading = "Find out what your course is worth",
-  subheading = "No obligation. Completely confidential. For courses with 18+ holes and $1M+ gross revenue.",
-  submitLabel = "Get my free evaluation",
   routeSlug,
-  thankYouBody = "Thank you — your request is confidential and in good hands. A Fairway Advisors principal will reach out personally to begin your evaluation.",
 }: FormCardProps): React.ReactElement {
   const { submit } = useMegaLeadForm();
 
@@ -202,9 +210,7 @@ export function FormCard({
     setData((d) => (d.inquiryRole ? d : { ...d, inquiryRole: "acquire" }));
   }, []);
 
-  const isAcquireRole = data.inquiryRole === "acquire";
-  const activeHeading = isAcquireRole ? ACQUIRE_HEADING : heading;
-  const activeSubmitLabel = isAcquireRole ? ACQUIRE_SUBMIT_LABEL : submitLabel;
+  const roleCopy = ROLE_COPY[data.inquiryRole] ?? FORM_COPY.shared;
 
   const update = (k: FieldKey, v: string): void => {
     setData((d) => ({ ...d, [k]: v }));
@@ -234,10 +240,7 @@ export function FormCard({
   // Choosing a role clears its own error and drops any stale errors/touched
   // state left on the now-inactive path so hidden fields never flag or leak.
   const selectRole = (role: string): void => {
-    const inactive: FieldKey[] =
-      role === "acquire"
-        ? ["courseType", "grossRevenue"]
-        : ["acquireCourseType", "targetAcquisitionBudget"];
+    const inactive: FieldKey[] = role === "sell" ? [] : SELLER_FIELDS;
     setData((d) => ({ ...d, inquiryRole: role }));
     setTouched((t) => {
       const next = { ...t, inquiryRole: true };
@@ -252,18 +255,14 @@ export function FormCard({
     });
   };
 
-  const fireTracking = (qualified: boolean): void => {
-    if (typeof window === "undefined") return;
-    const route =
-      routeSlug || (typeof window !== "undefined" ? window.location.pathname : "/");
-    // Mega optimizer event FIRST, then the GTM dataLayer signal.
-    window.MegaTag?.trackEvent?.("form_submit", { form_route: route, qualified });
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ event: "form_submit", form_route: route, qualified });
-    // Gated qualified-lead optimization event — only for 18+ holes AND $1M+.
-    if (qualified) {
-      window.MegaTag?.trackEvent?.("qualified_lead", { form_route: route });
-      window.dataLayer.push({ event: "qualified_lead", form_route: route });
+  const focusFirstInvalid = (order: FieldKey[], allErrors: FieldErrors): void => {
+    const firstBad = order.find((k) => allErrors[k]);
+    if (!firstBad) return;
+    const el = fieldRefs.current[firstBad];
+    try {
+      el?.focus({ preventScroll: false });
+    } catch {
+      el?.focus();
     }
   };
 
@@ -280,71 +279,21 @@ export function FormCard({
         order.forEach((k) => { next[k] = true; });
         return next;
       });
-      const firstBad = order.find((k) => allErrors[k]);
-      if (firstBad) {
-        const el = fieldRefs.current[firstBad];
-        try {
-          (el as HTMLElement | null)?.focus({ preventScroll: false });
-        } catch {
-          el?.focus();
-        }
-      }
+      focusFirstInvalid(order, allErrors);
       return;
     }
     inFlightRef.current = true;
     setSubmitting(true);
     setSubmitError(null);
-    // Qualification gate — sellers are scored on 9-hole OR Under $1M (either
-    // disqualifies the optimization event, but ALL leads still submit).
-    // Acquire leads are NOT scored on seller fields; a valid acquire lead is
-    // treated as qualified — deeper acquire scoring is a downstream task.
-    const isAcquire = data.inquiryRole === "acquire";
-    const courseDQ = !isAcquire && data.courseType === DISQUALIFYING.courseType;
-    const revenueDQ = !isAcquire && data.grossRevenue === DISQUALIFYING.grossRevenue;
-    const qualified = isAcquire || !(courseDQ || revenueDQ);
-    const disqualification_reason = isAcquire
-      ? null
-      : courseDQ && revenueDQ
-        ? "nine_hole_and_revenue_under_1m"
-        : courseDQ
-          ? "nine_hole"
-          : revenueDQ
-            ? "revenue_under_1m"
-            : null;
-    // Only the active path's qualifying fields go on the payload — never both.
-    const pathFields = isAcquire
-      ? {
-          acquireCourseType: data.acquireCourseType,
-          targetAcquisitionBudget: data.targetAcquisitionBudget,
-        }
-      : {
-          courseType: data.courseType,
-          grossRevenue: data.grossRevenue,
-        };
+    const route = routeSlug || window.location.pathname;
     try {
-      const res = await submit({
-        inquiryRole: data.inquiryRole,
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        email: data.email.trim(),
-        phone: data.phone.replace(/\D/g, ""),
-        ...pathFields,
-        smsConsent: data.smsConsent,
-        smsConsentText: data.smsConsent
-          ? `${SMS_CONSENT_TEXT} Privacy Policy: ${PRIVACY_POLICY_URL} | Terms & Conditions: ${TERMS_URL}`
-          : "Not provided",
-        qualified,
-        disqualification_reason,
-        route_slug:
-          routeSlug ||
-          (typeof window !== "undefined" ? window.location.pathname : "/"),
-      });
+      const res = await submit(buildFormData(data, route));
       // A 2xx with a body that isn't {ok:true} is still a dropped lead. Only
       // confirmed success fires conversions and shows the thank-you card.
       if (res?.ok !== true) {
         throw new Error("Submission not confirmed by server.");
       }
-      fireTracking(qualified);
+      fireTracking(route);
       setSubmitted(true);
     } catch (err) {
       console.error("Form submission error:", err);
@@ -375,7 +324,7 @@ export function FormCard({
             Request received.
           </h3>
           <p className="text-base leading-relaxed text-[var(--color-muted)]">
-            {thankYouBody}
+            {roleCopy.thankYouBody}
           </p>
           <p className="text-sm text-[var(--color-muted)]">
             Prefer to talk now? Call{" "}
@@ -398,15 +347,15 @@ export function FormCard({
     <form
       onSubmit={handleNativeSubmit}
       noValidate
-      aria-label="Request a free, confidential golf course evaluation"
+      aria-label="Start a confidential conversation with Fairway Advisors"
       className={`${cardBase} space-y-3.5 rounded-2xl p-6 md:p-7`}
     >
       <div className="mb-1 space-y-1.5">
-        <p className="eyebrow">{eyebrow}</p>
+        <p className="eyebrow">{FORM_COPY.eyebrow}</p>
         <h3 className="font-display text-2xl leading-tight text-[var(--color-text)] md:text-[1.9rem]">
-          {activeHeading}
+          {roleCopy.heading}
         </h3>
-        <p className="text-sm leading-snug text-[var(--color-muted)]">{subheading}</p>
+        <p className="text-sm leading-snug text-[var(--color-muted)]">{FORM_COPY.subheading}</p>
       </div>
 
       {/* Inquiry role — REQUIRED first control; drives the sell/acquire path */}
@@ -558,7 +507,7 @@ export function FormCard({
         )}
       </div>
 
-      {/* Sell path — seller qualifying selects */}
+      {/* Sell path — seller-only selects */}
       {data.inquiryRole === "sell" && (
         <>
           <SelectField
@@ -590,42 +539,6 @@ export function FormCard({
             fieldRef={(el) => { fieldRefs.current.grossRevenue = el; }}
             onSelect={(v) => { update("grossRevenue", v); markTouched("grossRevenue", v); }}
             onBlurField={(v) => markTouched("grossRevenue", v)}
-          />
-        </>
-      )}
-
-      {/* Acquire path — buyer qualifying selects (seller fields unmounted) */}
-      {data.inquiryRole === "acquire" && (
-        <>
-          <SelectField
-            id={`${idPrefix}-acquireCourseType`}
-            name="acquireCourseType"
-            label="What type of golf course are you looking to acquire?"
-            placeholder="What type of course are you seeking?"
-            options={COURSE_TYPE_OPTIONS}
-            value={data.acquireCourseType}
-            showError={showErr("acquireCourseType")}
-            error={errors.acquireCourseType}
-            errorId={errId("acquireCourseType")}
-            disabled={submitting}
-            fieldRef={(el) => { fieldRefs.current.acquireCourseType = el; }}
-            onSelect={(v) => { update("acquireCourseType", v); markTouched("acquireCourseType", v); }}
-            onBlurField={(v) => markTouched("acquireCourseType", v)}
-          />
-          <SelectField
-            id={`${idPrefix}-targetAcquisitionBudget`}
-            name="targetAcquisitionBudget"
-            label="What is your target acquisition budget?"
-            placeholder="Target acquisition budget"
-            options={GROSS_REVENUE_OPTIONS}
-            value={data.targetAcquisitionBudget}
-            showError={showErr("targetAcquisitionBudget")}
-            error={errors.targetAcquisitionBudget}
-            errorId={errId("targetAcquisitionBudget")}
-            disabled={submitting}
-            fieldRef={(el) => { fieldRefs.current.targetAcquisitionBudget = el; }}
-            onSelect={(v) => { update("targetAcquisitionBudget", v); markTouched("targetAcquisitionBudget", v); }}
-            onBlurField={(v) => markTouched("targetAcquisitionBudget", v)}
           />
         </>
       )}
@@ -683,12 +596,12 @@ export function FormCard({
         disabled={submitting || submitted}
         className="mt-1 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)] disabled:cursor-not-allowed disabled:bg-[var(--color-disabled)] disabled:translate-y-0"
       >
-        {submitting ? "Submitting…" : activeSubmitLabel}
+        {submitting ? "Submitting…" : roleCopy.submitLabel}
         {!submitting && <Icon name="arrow" className="h-4 w-4" strokeWidth={2.4} />}
       </button>
 
       <p className="text-center text-xs leading-relaxed text-[var(--color-muted)]">
-        Completely confidential. We&apos;ll only use your details to prepare your evaluation.
+        Completely confidential. We&apos;ll only use your details to respond to your inquiry.
       </p>
     </form>
   );

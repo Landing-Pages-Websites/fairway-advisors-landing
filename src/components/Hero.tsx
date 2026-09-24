@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
 import { FormCard } from "@/components/FormCard";
 import { Icon } from "@/components/icons";
-import { HERO, PHONE, PHONE_HREF } from "@/lib/content";
+import { BRAND, CTA, HERO, PHONE, PHONE_HREF } from "@/lib/content";
 import { hasAcquireToken } from "@/lib/acquisitionMode";
 
 // The hero form's acquire radio doubles as the scroll/focus target for the
@@ -13,8 +13,8 @@ import { hasAcquireToken } from "@/lib/acquisitionMode";
 const HERO_ACQUIRE_TARGET_ID = "hero-inquiryRole-acquire";
 
 export function Hero(): React.ReactElement {
-  // Detected after mount (client-only) so ordinary traffic renders the
-  // seller-first hero unchanged; the Buy-Side token flips it to acquisition mode.
+  // Detected after mount (client-only) so ordinary traffic renders the shared
+  // buy/sell hero unchanged; the Buy-Side token flips it to acquisition mode.
   const [acquireMode, setAcquireMode] = useState(false);
   useEffect(() => {
     if (hasAcquireToken(window.location.search)) setAcquireMode(true);
@@ -60,18 +60,14 @@ export function Hero(): React.ReactElement {
             className="pointer-events-none absolute -inset-x-5 -top-28 bottom-0 -z-[1] bg-[linear-gradient(180deg,rgba(10,13,27,0.62)_0%,rgba(10,13,27,0.55)_62%,rgba(10,13,27,0.28)_88%,rgba(10,13,27,0)_100%)] lg:hidden"
           />
           <Reveal className="space-y-4 sm:space-y-6">
-            <p className="eyebrow">{HERO.eyebrow}</p>
+            <p className="eyebrow">{BRAND.tagline}</p>
 
-            <h1 className="font-display font-black leading-[1.02] tracking-[-0.02em] text-[var(--color-text)] text-[2rem] sm:text-6xl lg:text-[5rem]">
-              {HERO.h1Lead}
-              <span className="align-super text-[0.4em] text-[var(--color-accent)]">
-                {HERO.h1Trademark}
-              </span>
-              <span className="text-[var(--color-accent)]">{HERO.h1Punct}</span>
+            <h1 className="font-display font-black leading-[1.04] tracking-[-0.02em] text-[var(--color-text)] text-[2.5rem] sm:text-6xl lg:text-[4.5rem]">
+              {HERO.h1}
             </h1>
 
-            <p className="max-w-xl text-lg font-light leading-snug text-[var(--color-text)]/90 sm:leading-relaxed md:text-xl">
-              {HERO.subhead}
+            <p className="max-w-xl text-lg font-normal leading-snug text-[var(--color-text)] sm:leading-relaxed md:text-xl">
+              {HERO.positioning}
             </p>
 
             <p className="max-w-xl text-base leading-snug text-[var(--color-muted)] sm:leading-relaxed">
@@ -90,10 +86,10 @@ export function Hero(): React.ReactElement {
                 </button>
               ) : (
                 <a
-                  href="#lead-form"
+                  href={CTA.formAnchor}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-7 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-cta transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] lg:hidden"
                 >
-                  Find out what your course is worth
+                  {CTA.primary}
                   <Icon name="arrow" className="h-4 w-4" strokeWidth={2.2} />
                 </a>
               )}
@@ -111,7 +107,7 @@ export function Hero(): React.ReactElement {
             </div>
 
             {/* Secondary acquisition path — restrained/outlined so it stays
-                subordinate to the seller-first headline and gold CTA. */}
+                subordinate to the shared headline and gold CTA. */}
             <div className="space-y-3 border-t border-[var(--color-text)]/10 pt-4 sm:pt-6">
               <h2 className="font-display text-lg font-bold tracking-[-0.01em] text-[var(--color-text)]">
                 Golf Course Acquisitions
