@@ -189,10 +189,10 @@ export default function PrivacyPolicyPage(): React.ReactElement {
               <br />
               Phone:{" "}
               <a
-                href="tel:2144851500"
+                href="tel:3125935434"
                 className="font-semibold text-[var(--color-accent)] underline underline-offset-4"
               >
-                (214) 485-1500
+                (312) 593-5434
               </a>
             </p>
           </section>
