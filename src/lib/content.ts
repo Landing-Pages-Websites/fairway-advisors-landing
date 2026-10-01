@@ -8,12 +8,12 @@
 //   • "unrivaled track record from California to New York".
 //   • Trademarks: "The Business of Golf®" and "There's a Major Difference®".
 
-export const PHONE = "(214) 485-1500";
-export const PHONE_HREF = "tel:2144851500";
+export const PHONE = "(312) 593-5434";
+export const PHONE_HREF = "tel:3125935434";
 
 export const CTA = {
   primary: "Start a confidential conversation",
-  secondary: "Call (214) 485-1500",
+  secondary: "Call (312) 593-5434",
   formAnchor: "#lead-form",
 };
 

@@ -77,10 +77,10 @@
       "verified": true
     },
     {
-      "claim": "Phone number displayed on page: (214) 485-1500 (Fairway Advisors Main Office)",
-      "source_url": "https://www.fairwayadvisors.com/ (site footer: \"Main Office | 214.485.1500\") + client email request 2026-08-05 (Jeff Davis, Managing Director)",
+      "claim": "Phone number displayed on page: (312) 593-5434",
+      "source_url": "task spec: phone-number repair (peter/fairway-phone-a1800f45)",
       "verified": true,
-      "note": "Static display number (no CTM tracking number provisioned for this customer). Updated 2026-08-05 per client request, replacing the prior Chicago line with the Main Office line (214) 485-1500."
+      "note": "Static display number (no CTM tracking number provisioned for this customer). Updated 2026-10-01 per task-authorized phone-number repair; tel:3125935434."
     }
   ],
   "testimonials": [],
