@@ -113,7 +113,7 @@ export function Hero(): React.ReactElement {
                 Golf Course Acquisitions
               </h2>
               <p className="max-w-xl text-sm leading-relaxed text-[var(--color-muted)]">
-                Looking to acquire a golf course? Access private and off-market opportunities nationwide.
+                Looking for golf courses for sale? Access private and off-market opportunities nationwide.
               </p>
               <a
                 href="#buy-side"
