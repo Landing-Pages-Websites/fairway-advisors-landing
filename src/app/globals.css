@@ -128,6 +128,47 @@ section[id] { scroll-margin-top: 88px; }
   letter-spacing: 0.01em;
 }
 
+/* ─── Mobile heading overflow (<768px only; desktop untouched) ─── */
+@media (width < 48rem) {
+  /* Card + form titles: --text-2xl (3.75rem) is a desktop display size */
+  :is(#services, #track-record, #hero, #lead-form) h3.text-2xl {
+    font-size: var(--text-lg);
+  }
+
+  #clients h2.text-3xl {
+    font-size: 2.25rem;
+  }
+
+  /* Wrap safety for content headings; hero h1/h2 and header excluded */
+  section[id]:not(#hero) :is(h1, h2, h3),
+  #hero h3 {
+    overflow-wrap: anywhere;
+  }
+
+  /* Stop long words sizing the implicit `auto` track past the viewport */
+  #lead-form > div.grid,
+  #services article.grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Photo cards: keep 16:10 as a minimum, grow to fit name + badge */
+  #track-record article.aspect-\[16\/10\] {
+    aspect-ratio: auto;
+    display: grid;
+  }
+  #track-record article.aspect-\[16\/10\]::before {
+    content: "";
+    grid-area: 1 / 1;
+    padding-top: 62.5%;
+  }
+  #track-record article.aspect-\[16\/10\] > .bottom-0 {
+    position: relative;
+    grid-area: 1 / 1;
+    align-self: end;
+    padding-top: 3.5rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
